@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,3 +29,7 @@ Route::get('/amoclient/ready', function(){
 Route::get('/', function () {
     return view('welcome');
 })->name('home');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', \App\Http\Livewire\DashboardPage::class)->name('dashboard');
+});

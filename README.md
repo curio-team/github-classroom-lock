@@ -4,6 +4,27 @@ Locks a GitHub Classroom by removing all students from their team. It keeps trac
 
 This helps us restrict access when students leave our school.
 
+## Getting Started
+
+1. Clone this repository
+2. Run `composer install`
+3. Copy `.env.example` to `.env` and fill in the values (see [#Access Token](#access-token) for more info)
+4. Run `php artisan key:generate`
+5. `npm run dev` to run vite and compile the frontend (watching for changes)
+6. `php artisan serve` to run the server
+7. Open `http://localhost:8000` in your browser
+8. Run `php artisan migrate --seed` to create the database and seed it with some test data
+
+## Access Token
+
+1. [Get a Fine-grained access token from GitHub here](https://github.com/settings/personal-access-tokens/new).
+2. Select the `curio-studenten` organization
+3. Give it the following permissions:
+    * Organization permissions:
+        * Members: read and write
+    * *(Optional) Repository permissions:*
+        * *Contents: read*
+
 ## Notes:
 
 ### cURL error 60: SSL certificate expired

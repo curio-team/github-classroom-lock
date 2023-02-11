@@ -32,6 +32,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | GitHub API Information
+    |--------------------------------------------------------------------------
+    |
+    | These configurations determine how the API will be authenticated with and
+    | what parameters will be used to make requests.
+    |
+    */
+
+    'github_token' => env('GITHUB_TOKEN'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Debug Mode
     |--------------------------------------------------------------------------
     |
