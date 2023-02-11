@@ -19,17 +19,20 @@ Route::post('/logout', function(Request $request){
 })->name('logout');
 
 Route::get('/amoclient/ready', function(){
-	return redirect()->route('home');
+	return redirect()->route('dashboard');
 });
 
 /*
     App
 */
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::middleware(['guest'])->group(function () {
+    Route::get('/', function () {
+        return view('welcome');
+    });
+});
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', \App\Http\Livewire\DashboardPage::class)->name('dashboard');
+    Route::get('/dashboard', \App\Http\Livewire\DashboardPage::class)
+        ->name('dashboard');
 });

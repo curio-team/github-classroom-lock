@@ -1,5 +1,5 @@
 <nav x-data="{ openSidebar: false }" class="bg-white shadow-sm py-4 px-8">
-    <x-stack-layout row class="items-center justify-between max-w-prose mx-auto">
+    <x-content.stack-layout row class="items-center justify-between max-w-prose mx-auto">
         <a class="max-w-[100px] grow"
            href="{{ url('/') }}">
             <x-logos.light-logo />
@@ -24,16 +24,16 @@
             </button>
 
             <!-- Left Side Of Navbar -->
-            <x-stack-layout row class="md:grow">
+            <x-content.stack-layout row class="md:grow">
                 @auth
                 @can('view-any', App\Models\Site::class)
                     <a href="{{ route('sites.index') }}">@lang('crud.studenten_info_sites.manage')</a>
                 @endcan
                 @endauth
-            </x-stack-layout>
+            </x-content.stack-layout>
 
             <!-- Right Side Of Navbar -->
-            <x-stack-layout row class="items-center">
+            <x-content.stack-layout row class="items-center">
                 <!-- Authentication Links -->
                 @guest
                     <x-buttons.link href="{{ route('login') }}">{{ __('Login') }}</x-buttons.link>
@@ -55,7 +55,7 @@
                         </x-buttons.primary>
                     </form>
                 @endguest
-            </x-stack-layout>
+            </x-content.stack-layout>
         </div>
-    </x-stack-layout>
+    </x-content.stack-layout>
 </nav>

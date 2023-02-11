@@ -13,7 +13,7 @@ This helps us restrict access when students leave our school.
 5. `npm run dev` to run vite and compile the frontend (watching for changes)
 6. `php artisan serve` to run the server
 7. Open `http://localhost:8000` in your browser
-8. Run `php artisan migrate --seed` to create the database and seed it with some test data
+8. Run `php artisan migrate` to create the database
 
 ## Access Token
 
