@@ -36,6 +36,11 @@
                             </x-content.hint>
                         @endforelse
                     </x-content.stack-layout>
+                    @if ($team->locked)
+                        <x-buttons.primary wire:click="unlockTeam('{{ $team->id }}')">Unlock Team</x-buttons.primary>
+                    @else
+                        <x-buttons.danger wire:click="lockTeam('{{ $team->id }}')">Lock Team</x-buttons.danger>
+                    @endif
                 </x-content.stack-layout>
             @empty
                 <x-content.hint>

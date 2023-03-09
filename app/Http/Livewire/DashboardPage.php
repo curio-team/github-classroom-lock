@@ -110,4 +110,40 @@ class DashboardPage extends Component
             $team->save();
         }
     }
+
+    /**
+     * Locks a team by removing their members on GitHub.
+     */
+    public function lockTeam($teamId)
+    {
+        [$client] = $this->getApiClientAndPaginator();
+        $organization = config('app.github_organization');
+
+        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+
+        foreach ($team->members as $member) {
+            $client->teams()->removeMember($team->slug, $member->login, $organization);
+        }
+
+        $team->locked = true;
+        $team->save();
+    }
+    
+    /**
+     * Unlocks a team by adding their members on GitHub.
+     */
+    public function unlockTeam($teamId)
+    {
+        [$client] = $this->getApiClientAndPaginator();
+        $organization = config('app.github_organization');
+
+        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+
+        foreach ($team->members as $member) {
+            $client->teams()->addMember($team->slug, $member->login, $organization);
+        }
+
+        $team->locked = false;
+        $team->save();
+    }
 }
