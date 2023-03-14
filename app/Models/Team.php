@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model; 
+use Illuminate\Database\Eloquent\Builder;
 
 class Team extends Model
 {
@@ -21,6 +22,29 @@ class Team extends Model
     protected $fillable = [
         'id',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('archived', function (Builder $builder) {
+            $builder->where('is_archived', false);
+        });
+    }
+
+    /**
+     * Scope to include archived teams.
+     */
+    public function scopeWithArchived(Builder $query): void
+    {
+        $query->withoutGlobalScope('archived');
+    }
+
+    /**
+     * Scope to only get archived teams.
+     */
+    public function scopeArchived(Builder $query): void
+    {
+        $query->withoutGlobalScope('archived')->where('is_archived', true);
+    }
 
     /**
      * Relationship to the team members.

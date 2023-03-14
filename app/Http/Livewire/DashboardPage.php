@@ -10,9 +10,11 @@ use Livewire\Component;
 
 class DashboardPage extends Component
 {
+    public $showArchived = false;
+
     public function render()
     {
-        $teams = \App\Models\Team::with('members')->get();
+        $teams = $this->showArchived ? \App\Models\Team::withArchived()->with('members')->get() : \App\Models\Team::with('members')->get();
         $teamsLocked = $teams->every(function ($team) {
             return $team->locked;
         });
@@ -47,7 +49,7 @@ class DashboardPage extends Component
         foreach ($teams as $teamData) {
             $membersData = $paginator->fetchAll($client->teams(), 'members', [$teamData['slug'], $organization]);
 
-            $team = \App\Models\Team::firstOrNew(['id' => $teamData['id']]);
+            $team = \App\Models\Team::withArchived()->firstOrNew(['id' => $teamData['id']]);
             $team->name = $teamData['name'];
             $team->slug = $teamData['slug'];
             $team->save();
@@ -145,5 +147,71 @@ class DashboardPage extends Component
 
         $team->locked = false;
         $team->save();
+    }
+
+    /**
+     * Updates the team lock status by checking if the team members on GitHub match the local database.
+     */
+    public function refreshTeam($teamId)
+    {
+        [$client, $paginator] = $this->getApiClientAndPaginator();
+        $organization = config('app.github_organization');
+
+        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+
+        $membersData = $paginator->fetchAll($client->teams(), 'members', [$team->slug, $organization]);
+
+        $members = [];
+
+        foreach ($membersData as $member) {
+            $teamMember = \App\Models\TeamMember::firstOrNew([
+                'team_id' => $team->id,
+                'login' => $member['login'],
+            ]);
+            $teamMember->login = $member['login'];
+            $teamMember->avatar_url = $member['avatar_url'];
+            $teamMember->url = $member['url'];
+            $teamMember->site_admin = $member['site_admin'];
+
+            $members[] = $teamMember;
+        }
+
+        $team->members()->saveMany($members);
+
+        $team->locked = $team->members->count() !== count($membersData);
+        $team->save();
+    }
+
+    /**
+     * Sets the team as archived, which means it will be ignored by the (unlock) commands.
+     */
+    public function archiveTeam($teamId)
+    {
+        $team = \App\Models\Team::where('id', $teamId)->first();
+        $team->is_archived = true;
+        $team->save();
+    }
+
+    /**
+     * Sets the team as unarchived
+     */
+    public function unarchiveTeam($teamId)
+    {
+        $team = \App\Models\Team::withArchived()->where('id', $teamId)->first();
+        $team->is_archived = false;
+        $team->save();
+    }
+
+    /**
+     * Deletes a team from the local database.
+     */
+    public function deleteTeam($teamId)
+    {
+        if (\App\Models\TeamMember::where('team_id', $teamId)->count() > 0) {
+            return redirect()->route('dashboard')->with('error', 'Team has members, cannot delete.');
+        }
+
+        $team = \App\Models\Team::where('id', $teamId)->first();
+        $team->delete();
     }
 }

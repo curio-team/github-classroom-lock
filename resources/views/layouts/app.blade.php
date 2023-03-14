@@ -16,6 +16,10 @@
             @endforeach
         @endif
 
+        @if(session()->has('error'))
+            window.Notyf.error(@js(session()->get('error')));
+        @endif
+
         @if(session()->has('success'))
             window.Notyf.success(@js(session()->get('success')));
         @endif

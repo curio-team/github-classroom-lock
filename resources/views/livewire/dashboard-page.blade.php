@@ -11,6 +11,10 @@
     <x-content.section>
         <x-content.stack-layout>
             <x-headings.section>GitHub Teams Snapshot</x-headings.section>
+            <div class="flex flex-row gap-2">
+                <input type="checkbox" wire:model="showArchived" class="rounded border-gray-800 border-2 w-6 h-6" id="showArchived" />
+                <label for="showArchived">Show Archived</label>
+            </div>
 
             @forelse ($teams as $team)
                 <x-content.stack-layout class="border-2 border-gray-800 p-4 rounded">
@@ -36,11 +40,25 @@
                             </x-content.hint>
                         @endforelse
                     </x-content.stack-layout>
-                    @if ($team->locked)
-                        <x-buttons.primary wire:click="unlockTeam('{{ $team->id }}')">Unlock Team</x-buttons.primary>
-                    @else
-                        <x-buttons.danger wire:click="lockTeam('{{ $team->id }}')">Lock Team</x-buttons.danger>
-                    @endif
+                    <x-content.stack-layout row x-data="{}">
+                        @if ($team->locked)
+                            <x-buttons.primary wire:click="unlockTeam('{{ $team->id }}')" class="grow">Unlock Team</x-buttons.primary>
+                            @if ($team->is_archived)
+                                <x-buttons.secondary wire:click="unarchiveTeam('{{ $team->id }}')">Unarchive</x-buttons.secondary>
+                            @else
+                                <x-buttons.secondary wire:click="archiveTeam('{{ $team->id }}')">Archive</x-buttons.secondary>
+                            @endif
+                        @else
+                            <x-buttons.danger wire:click="lockTeam('{{ $team->id }}')" class="grow">Lock Team</x-buttons.danger>
+                        @endif
+                        <x-buttons.secondary wire:click="refreshTeam('{{ $team->id }}')">Refresh State</x-buttons.secondary>
+                        {{-- If the team has no members, show a delete button --}}
+                        @if (count($team->members) === 0)
+                            <x-buttons.danger @click="if (confirm('Are you sure you want to delete this team?')) { $wire.deleteTeam('{{ $team->id }}') }">
+                                Delete Team
+                            </x-buttons.danger>
+                        @endif
+                    </x-content.stack-layout>
                 </x-content.stack-layout>
             @empty
                 <x-content.hint>
