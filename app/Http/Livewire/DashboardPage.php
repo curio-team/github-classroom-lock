@@ -121,7 +121,7 @@ class DashboardPage extends Component
         [$client] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
 
-        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()->with('members')->where('id', $teamId)->first();
 
         foreach ($team->members as $member) {
             $client->teams()->removeMember($team->slug, $member->login, $organization);
@@ -139,7 +139,7 @@ class DashboardPage extends Component
         [$client] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
 
-        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()->with('members')->where('id', $teamId)->first();
 
         foreach ($team->members as $member) {
             $client->teams()->addMember($team->slug, $member->login, $organization);
@@ -157,7 +157,7 @@ class DashboardPage extends Component
         [$client, $paginator] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
 
-        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()->with('members')->where('id', $teamId)->first();
 
         $membersData = $paginator->fetchAll($client->teams(), 'members', [$team->slug, $organization]);
 
@@ -211,7 +211,7 @@ class DashboardPage extends Component
             return redirect()->route('dashboard')->with('error', 'Team has members, cannot delete.');
         }
 
-        $team = \App\Models\Team::where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()->where('id', $teamId)->first();
         $team->delete();
     }
 }
