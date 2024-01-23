@@ -9,6 +9,19 @@
     </x-content.section>
 
     <x-content.section>
+        <x-headings.page>Lock the GPT Chat</x-headings.page>
+        <p>Additionally we provide a ChatGPT implementation using the OpenAI API. This is the only permitted use of a Large Language Model (LLM).</p>
+        @if ($isChatActive)
+            <x-buttons.danger wire:click="lockChat">Lock Chat</x-buttons.danger>
+        @else
+            <x-buttons.primary wire:click="unlockChat">Unlock Chat</x-buttons.primary>
+        @endif
+        <x-content.hint>
+            <p>Using this button you can lock or unlock ChatGPT</p>
+        </x-content.hint>
+    </x-content.section>
+
+    <x-content.section>
         <x-content.stack-layout>
             <x-headings.section>GitHub Teams Snapshot</x-headings.section>
             <div class="flex flex-row gap-2">

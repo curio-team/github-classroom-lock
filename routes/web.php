@@ -1,5 +1,6 @@
 <?php
 
+use App\Settings\GeneralSettings;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,3 +37,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', \App\Http\Livewire\DashboardPage::class)
         ->name('dashboard');
 });
+
+Route::get('/gpt', function(GeneralSettings $settings) {
+    return view('gpt')->with('isChatActive', $settings->chat_active);
+})->name('gpt');
+
+Route::post('ai-request', [\App\Http\Controllers\ApiController::class, 'performPrompt'])->name('ai-request');
