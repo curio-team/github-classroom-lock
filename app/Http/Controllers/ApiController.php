@@ -50,7 +50,7 @@ class ApiController extends Controller
             ],
             'json' => [
                 'model' => $model,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
+                'messages' => $history,
                 'stream' => true,
                 'temperature' => 0
             ],

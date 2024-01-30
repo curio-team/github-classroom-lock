@@ -154,7 +154,8 @@
 
             const author = isSender === true ? 'user' : 'assistant';
             history.push({
-                [author]: message,
+                role: author,
+                content: message,
             });
 
             return messageTextEl;
