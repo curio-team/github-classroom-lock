@@ -16,11 +16,15 @@ class TeacherDashboardPage extends Component
     public function render(ChatSettings $settings)
     {
         $teams = $this->showArchived ? \App\Models\Team::withArchived()->with('members')->get() : \App\Models\Team::with('members')->get();
-        $isChatActive = $settings->chat_active;
         $teamsLocked = $teams->every(function ($team) {
             return $team->locked;
         });
-        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
+
+        $isChatActive = $settings->chat_active;
+        $chatTokensMax = $settings->max_chat_tokens;
+        $chatTokensUsed = $settings->used_chat_tokens;
+
+        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive', 'chatTokensMax', 'chatTokensUsed'));
     }
 
     private function getApiClientAndPaginator()

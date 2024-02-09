@@ -62,15 +62,50 @@ class ApiController extends Controller
                 'model' => $model,
                 'messages' => $history,
                 'stream' => true,
-                'temperature' => 0
+                'temperature' => 0 // Very low temperature to make the model more deterministic
             ],
         ]);
 
         $body = $response->getBody();
 
-        // Stream the response through to the client
+        $partialChunk = '';
+        $chunkCount = 0;
+
+        // Stream the response through and process chunks
         while (!$body->eof()) {
-            echo $body->read(1024);
+            $chunk = $body->read(1024);
+            $text = $partialChunk . $chunk;
+            $chunks = explode("\n", $text);
+
+            for ($i = 0; $i < count($chunks) - 1; $i++) {
+                if (trim($chunks[$i]) !== '') {
+                    $chunkCount++;
+
+                    if (strpos($chunks[$i], 'data: ') === 0) {
+                        $dataChunk = json_decode(substr($chunks[$i], 6), true);
+
+                        if (isset($dataChunk['choices'][0]['delta']['content'])) {
+                            $content = $dataChunk['choices'][0]['delta']['content'];
+
+                            if ($dataChunk['choices'][0]['finish_reason'] == 'stop') {
+                                break;
+                            }
+
+                            echo json_encode([
+                                'content' => $content,
+                            ]) . "\n\n";
+                        }
+                    }
+                }
+            }
+
+            // Prepare the partial chunk for the next iteration
+            $partialChunk = $chunks[count($chunks) - 1];
         }
+
+        // Register the chat token usage
+        $settings = app(ChatSettings::class);
+        $settings->used_chat_tokens += $chunkCount;
+        $settings->save();
     }
 }

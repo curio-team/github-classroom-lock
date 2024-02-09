@@ -1,45 +1,17 @@
 @props(['isChatActive' => false])
 
-@unless ($isChatActive)
-<div class="rounded bg-slate-500 border border-slate-600 p-4 mb-6">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-slate-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                        d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 9a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm0 2a1 1 0 100 2h4a1 1 0 100-2H8z"
-                        clip-rule="evenodd" />
-            </svg>
-        </div>
-        <div class="ml-3">
-            <p class="text-sm leading-5 text-slate-200">
-                CurioGPT is currently locked. It is only active during examination times. Please ask your teacher to
-                unlock it.
-            </p>
-        </div>
-    </div>
-</div>
-@else
-<div class="rounded bg-slate-500 border border-slate-600 p-4 mb-6">
-    <div class="flex">
-        <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-slate-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20">
-                <path fill-rule="evenodd"
-                        d="M10 2a8 8 0 100 16 8 8 0 000-16zM8 9a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm0 2a1 1 0 100 2h4a1 1 0 100-2H8z"
-                        clip-rule="evenodd" />
-            </svg>
-        </div>
-        <div class="ml-3">
-            <p class="text-sm leading-5 text-slate-200">
-                This chat is not saved. When you refresh the page, the chat will be gone.
-            </p>
-        </div>
-    </div>
-</div>
+<x-notice>
+    CurioGPT is provided as is and with no guarantees. It may not always be available. As with all AI, it may produce incorrect or inappropriate responses. Please use it responsibly.
+</x-notice>
 
+@unless ($isChatActive)
+<x-notice>
+    CurioGPT is currently locked. It is only active during examination times. Please ask your teacher to unlock it.
+</x-notice>
+@else
+<x-notice>
+    This chat is not saved. When you refresh the page, the chat will be gone.
+</x-notice>
 <div class="flex flex-col min-h-[500px] border border-slate-400 rounded">
     <ul class="flex flex-row border-b border-slate-400">
         <li class="flex-1 text-center rounded-tr bg-slate-200 p-4 text-black">
@@ -191,47 +163,23 @@
         })
         .then(response => response.body)
         .then(async body => {
-            const reader = body.pipeThrough(new TextDecoderStream())
-                .getReader();
-            let partialChunk = '';
-
+            const reader = body.pipeThrough(new TextDecoderStream()).getReader();
             messageTextEl.innerText = '';
 
             while (true) {
                 const { done, value } = await reader.read();
+                if (done) break;
 
-                if (done) {
-                    if (partialChunk) {
-                        console.log('Full chunk:', partialChunk);
+                // Parse the JSON output from PHP, splitting it by the separator
+                const chunks = value.split('\n\n');
+                chunks.forEach(chunk => {
+                    if (chunk.length === 0) {
+                        return;
                     }
 
-                    break;
-                }
-
-                const text = partialChunk + value;
-                const chunks = text.split('\n');
-
-                for (let i = 0; i < chunks.length - 1; i++) {
-                    if (chunks[i].trim().startsWith('data: ')) {
-                        if(chunks[i].trim().substring(6) == '[DONE]'){
-                            console.log('DONE');
-                            break;
-                        }
-
-                        const dataChunk = JSON.parse(chunks[i].trim().substring(6));
-                        const content = dataChunk.choices[0].delta.content;
-
-                        if(dataChunk.choices[0].finish_reason == 'stop'){
-                            break;
-                        }
-
-                        messageTextEl.innerText += content;
-
-                        console.log(dataChunk);
-                    }
-                }
-
-                partialChunk = chunks[chunks.length - 1];
+                    const parsed = JSON.parse(chunk);
+                    messageTextEl.innerText += parsed.content;
+                });
             }
 
             console.log('Response received in full.');
