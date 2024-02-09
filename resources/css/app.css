@@ -1,3 +1,115 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * Styles for chat message markdown
+ */
+.chat-message-text h1 {
+    font-size: 1.5em;
+    margin: 0.5em 0;
+}
+
+.chat-message-text h2 {
+    font-size: 1.25em;
+    margin: 0.5em 0;
+}
+
+.chat-message-text h3 {
+    font-size: 1.1em;
+    margin: 0.5em 0;
+}
+
+.chat-message-text h4 {
+    font-size: 1em;
+    margin: 0.5em 0;
+}
+
+.chat-message-text h5 {
+    font-size: 0.875em;
+    margin: 0.5em 0;
+}
+
+.chat-message-text h6 {
+    font-size: 0.85em;
+    margin: 0.5em 0;
+}
+
+.chat-message-text p {
+    margin: 0.5em 0;
+}
+
+.chat-message-text blockquote {
+    border-left: 4px solid #e2e8f0;
+    padding: 0.5em 1em;
+    margin: 0.5em 0;
+    background-color: #f7fafc;
+}
+
+.chat-message-text hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 0.5em 0;
+}
+
+.chat-message-text ul {
+    margin: 0.5em 0;
+    padding-left: 1em;
+    list-style-type: disc;
+}
+
+.chat-message-text ol {
+    margin: 0.5em 0;
+    padding-left: 1em;
+    list-style-type: decimal;
+}
+
+.chat-message-text ul li {
+    margin: 0.25em 0;
+}
+
+.chat-message-text ol li {
+    margin: 0.25em 0;
+}
+
+.chat-message-text a {
+    color: #3182ce;
+    text-decoration: underline;
+}
+
+.chat-message-text a:hover {
+    color: #2c5282;
+}
+
+.chat-message-text img {
+    max-width: 100%;
+    height: auto;
+}
+
+.chat-message-text table {
+    width: 100%;
+    margin: 0.5em 0;
+    border-collapse: collapse;
+}
+
+.chat-message-text table th {
+    padding: 0.5em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.chat-message-text table td {
+    padding: 0.5em;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.chat-message-text pre {
+    margin: 0.5em 0;
+    padding: 0.5em;
+    background-color: #f7fafc;
+    border-radius: 0.25em;
+    overflow-x: auto;
+}
+
+.chat-message-text del {
+    text-decoration: line-through;
+}

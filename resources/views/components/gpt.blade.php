@@ -12,7 +12,7 @@
 <x-notice>
     This chat is not saved. When you refresh the page, the chat will be gone.
 </x-notice>
-<div class="flex flex-col min-h-[500px] border border-slate-400 rounded">
+<div class="flex flex-col h-[500px] border border-slate-400 rounded">
     <ul class="flex flex-row border-b border-slate-400">
         <li class="flex-1 text-center rounded-tr bg-slate-200 p-4 text-black">
             <input type="radio"
@@ -118,6 +118,7 @@
         }
 
         const messageTextEl = document.createElement('p');
+        messageTextEl.classList.add('chat-message-text');
         messageTextEl.innerText = message;
 
         messageContentEl.appendChild(messageTextEl);
@@ -132,6 +133,10 @@
         });
 
         return messageTextEl;
+    }
+
+    function chatScrollToBottom() {
+        chatHistory.parentElement.scrollTop = chatHistory.parentElement.scrollHeight;
     }
 
     formEl.addEventListener('submit', function(event) {
@@ -164,7 +169,9 @@
         .then(response => response.body)
         .then(async body => {
             const reader = body.pipeThrough(new TextDecoderStream()).getReader();
-            messageTextEl.innerText = '';
+
+            let currentMessage = '';
+            messageTextEl.innerText = currentMessage;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -178,6 +185,14 @@
                     }
 
                     const parsed = JSON.parse(chunk);
+                    currentMessage += parsed.content;
+
+                    // If parsed.content ends with one or more newlines, call marked.parse to convert all text until now to HTML
+                    if (parsed.content.endsWith('\n')) {
+                        const html = marked.parse(currentMessage);
+                        messageTextEl.innerHTML = html;
+                        return;
+                    }
 
                     const span = document.createElement('span');
                     span.innerText = parsed.content;
@@ -189,11 +204,12 @@
                     setTimeout(() => {
                         span.classList.remove('opacity-0');
                     }, 1);
+
+                    chatScrollToBottom();
                 });
             }
 
-            // Simplify the message to only text (removing the span elements)
-            messageTextEl.innerText = messageTextEl.innerText.trim();
+            messageTextEl.innerHTML = marked.parse(currentMessage);
             setFormDisabled(false);
 
             window.dispatchEvent(new CustomEvent('app-chat-received', {
