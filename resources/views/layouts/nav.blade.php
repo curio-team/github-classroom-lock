@@ -1,7 +1,7 @@
 <nav x-data="{ openSidebar: false }" class="bg-white shadow-sm py-4 px-8">
     <x-content.stack-layout row class="items-center justify-between max-w-prose mx-auto">
         <a class="max-w-[100px] grow"
-           href="{{ url('/') }}">
+           href="{{ route('dashboard') }}">
             <x-logos.light-logo />
         </a>
 
@@ -25,11 +25,10 @@
 
             <!-- Left Side Of Navbar -->
             <x-content.stack-layout row class="md:grow">
-                @auth
-                @can('view-any', App\Models\Site::class)
-                    <a href="{{ route('sites.index') }}">@lang('crud.studenten_info_sites.manage')</a>
-                @endcan
-                @endauth
+                <x-buttons.link
+                    href="{{ route('dashboard.student') }}">
+                    CurioGPT
+                </x-buttons.link>
             </x-content.stack-layout>
 
             <!-- Right Side Of Navbar -->

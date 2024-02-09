@@ -9,7 +9,7 @@ use Github\ResultPager;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 
-class DashboardPage extends Component
+class TeacherDashboardPage extends Component
 {
     public $showArchived = false;
 
@@ -20,7 +20,7 @@ class DashboardPage extends Component
         $teamsLocked = $teams->every(function ($team) {
             return $team->locked;
         });
-        return view('livewire.dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
+        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
     }
 
     private function getApiClientAndPaginator()
@@ -219,7 +219,7 @@ class DashboardPage extends Component
     public function deleteTeam($teamId)
     {
         if (\App\Models\TeamMember::where('team_id', $teamId)->count() > 0) {
-            return redirect()->route('dashboard')->with('error', 'Team has members, cannot delete.');
+            return redirect()->route('dashboard.teacher')->with('error', 'Team has members, cannot delete.');
         }
 
         /** @var \App\Models\Team $team */

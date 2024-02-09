@@ -34,12 +34,27 @@ Route::middleware(['guest'])->group(function () {
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', \App\Http\Livewire\DashboardPage::class)
-        ->name('dashboard');
-});
+    Route::get('/dashboard', function(Request $request) {
+        if($request->user()->type == 'teacher') {
+            return redirect()->route('dashboard.teacher');
+        } else {
+            return redirect()->route('dashboard.student');
+        }
+    })->name('dashboard');
 
-Route::get('/gpt', function(GeneralSettings $settings) {
-    return view('gpt')->with('isChatActive', $settings->chat_active);
-})->name('gpt');
+    Route::middleware(['teacher'])
+        ->prefix('teacher')
+        ->group(function () {
+            Route::get('/dashboard', \App\Http\Livewire\TeacherDashboardPage::class)
+                ->name('dashboard.teacher');
+        });
+
+    Route::prefix('student')
+    ->group(function () {
+        Route::get('/dashboard', \App\Http\Livewire\StudentDashboardPage::class)
+            ->name('dashboard.student');
+    });
+
+});
 
 Route::post('ai-request', [\App\Http\Controllers\ApiController::class, 'performPrompt'])->name('ai-request');
