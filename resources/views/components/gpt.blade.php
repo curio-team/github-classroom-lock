@@ -178,11 +178,22 @@
                     }
 
                     const parsed = JSON.parse(chunk);
-                    messageTextEl.innerText += parsed.content;
+
+                    const span = document.createElement('span');
+                    span.innerText = parsed.content;
+                    span.classList.add('opacity-0', 'transition-opacity')
+
+                    messageTextEl.appendChild(span);
+
+                    // Fade in the span
+                    setTimeout(() => {
+                        span.classList.remove('opacity-0');
+                    }, 1);
                 });
             }
 
-            console.log('Response received in full.');
+            // Simplify the message to only text (removing the span elements)
+            messageTextEl.innerText = messageTextEl.innerText.trim();
             setFormDisabled(false);
 
             window.dispatchEvent(new CustomEvent('app-chat-received', {
