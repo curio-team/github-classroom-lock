@@ -37,4 +37,4 @@ This helps us restrict access when students leave our school.
 
 ### cURL error 60: SSL certificate expired
 
-To test locally it can be useful to add `AMO_SSL_VERIFYPEER=false` to your .env file. This disables SSL verification, which is not recommended for production.
+To test locally it can be useful to add `AMO_SSL_VERIFYPEER=no` to your .env file. This disables SSL verification, which is not recommended for production.
