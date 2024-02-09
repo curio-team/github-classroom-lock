@@ -36,21 +36,18 @@
 
         <div class="flex flex-col overflow-y-scroll gap-2 flex-1 bg-slate-300 p-5">
             <x-notice>
-                CurioGPT is provided as is and with no guarantees. It may not always be available. As with all AI, it
-                may
-                produce
-                incorrect or inappropriate responses. Please use it responsibly.
+                CurioGPT wordt geleverd zoals het is en zonder garanties. Het is mogelijk dat het niet altijd
+                beschikbaar is.
             </x-notice>
 
             @unless ($isChatActive)
             <x-notice>
-                CurioGPT is currently locked. It is only active during examination times. Please ask your teacher to
-                unlock
-                it.
+                CurioGPT is momenteel vergrendeld. Het is alleen actief tijdens examens. Vraag je leraar om het te
+                ontgrendelen.
             </x-notice>
             @else
             <x-notice>
-                This chat is not saved. When you refresh the page, the chat will be gone.
+                Dit gesprek wordt niet opgeslagen. Wanneer je de pagina ververst, is het gesprek weg.
             </x-notice>
 
             <div id="chat-history"
@@ -66,7 +63,7 @@
                 <input type="text"
                        name="prompt"
                        id="prompt"
-                       placeholder="Enter your prompt here..."
+                       placeholder="Voer je prompt hier in..."
                        class="flex-grow border-transparent rounded-bl p-4 bg-slate-200 text-black">
 
                 <button type="submit"

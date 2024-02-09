@@ -1,31 +1,36 @@
 <x-content.main>
     <x-content.section>
-        <x-headings.page>Lock GitHub Classroom Teams</x-headings.page>
-        <p>Using this tool you can lock GitHub Classroom teams to prevent students from making changes to their repositories after they've left the examination room.</p>
+        <x-headings.page>CurioGPT Chat</x-headings.page>
+        <p>
+            We bieden studenten een ChatGPT-implementatie met behulp van de OpenAI API. Dit is de
+            <strong>enige toegestane manier om een Large Language Model (LLM) te gebruiken.</strong>
+        </p>
+
+        <p>CurioGPT wordt geleverd aan studenten zonder enige garanties. Het is mogelijk dat het niet altijd beschikbaar is. Als het niet beschikbaar is, mogen de studenten GEEN andere LLM gebruiken.</p>
+
+        <x-progress-bar :max="$chatTokensMax" :value="$chatTokensUsed">
+            Gebruikte Tokens
+        </x-progress-bar>
+
+        @if ($isChatActive)
+            <x-buttons.danger wire:click="lockChat">Vergrendel Chat</x-buttons.danger>
+        @else
+            <x-buttons.primary wire:click="unlockChat">Maak Chat Beschikbaar</x-buttons.primary>
+        @endif
+
         <x-content.hint>
-            <p>It works by removing students as members of their team, but keeping track of their membership. This way you can later decide to add them again.</p>
-            <p>The update snapshot button will find all GitHub teams in the organization '{{ config('app.github_organization') }}' of which the name matches this regex pattern: {{ config('app.github_team_pattern') }}.</p>
+            <p>CurioGPT mag alleen worden gebruikt tijdens examenuren.</p>
         </x-content.hint>
     </x-content.section>
 
     <x-content.section>
-        <x-headings.page>Lock the GPT Chat</x-headings.page>
-        <p>Additionally we provide a ChatGPT implementation using the OpenAI API. This is the <strong>only permitted use of a Large Language Model (LLM).</strong></p>
+        <x-headings.page>GitHub Classroom Teams Vergrendelen</x-headings.page>
 
-        <p>CurioGPT is provided with no guarantees. It may not always be available. If it is unavailable the students may NOT use any other LLM.</p>
-
-        <x-progress-bar :max="$chatTokensMax" :value="$chatTokensUsed">
-            Used Tokens
-        </x-progress-bar>
-
-        @if ($isChatActive)
-            <x-buttons.danger wire:click="lockChat">Lock Chat</x-buttons.danger>
-        @else
-            <x-buttons.primary wire:click="unlockChat">Unlock Chat</x-buttons.primary>
-        @endif
+        <p>Met deze tool kun je GitHub Classroom-teams vergrendelen om te voorkomen dat studenten wijzigingen aanbrengen in hun repositories nadat ze de examenruimte hebben verlaten.</p>
 
         <x-content.hint>
-            <p>Using this button you can lock or unlock ChatGPT</p>
+            <p>Het werkt door studenten als leden van hun team te verwijderen, maar houdt hun lidmaatschap bij. Op deze manier kun je later beslissen om ze weer toe te voegen.</p>
+            <p>De knop 'Snapshot bijwerken' vindt alle GitHub-teams in de organisatie '{{ config('app.github_organization') }}' waarvan de naam overeenkomt met dit regex-patroon: {{ config('app.github_team_pattern') }}.</p>
         </x-content.hint>
     </x-content.section>
 
@@ -34,7 +39,7 @@
             <x-headings.section>GitHub Teams Snapshot</x-headings.section>
             <div class="flex flex-row gap-2">
                 <input type="checkbox" wire:model="showArchived" class="rounded border-gray-800 border-2 w-6 h-6" id="showArchived" />
-                <label for="showArchived">Show Archived</label>
+                <label for="showArchived">Toon gearchiveerde teams</label>
             </div>
 
             @forelse ($teams as $team)
@@ -57,7 +62,7 @@
                             </x-content.stack-layout>
                         @empty
                             <x-content.hint>
-                                No members found. Please update the snapshot.
+                                Geen leden gevonden. Moet de snapshot worden bijgewerkt?
                             </x-content.hint>
                         @endforelse
                     </x-content.stack-layout>
@@ -83,16 +88,16 @@
                 </x-content.stack-layout>
             @empty
                 <x-content.hint>
-                    No teams found. Please update the snapshot.
+                    Geen teams gevonden. Moet de snapshot worden bijgewerkt?
                 </x-content.hint>
             @endforelse
 
             <x-content.stack-layout row wrap tight>
                 <x-buttons.primary wire:click="makeTeamSnapshot">Update Snapshot</x-buttons.primary>
                 @if ($teamsLocked)
-                    <x-buttons.primary wire:click="unlockAllTeams">Unlock All Teams</x-buttons.primary>
+                    <x-buttons.primary wire:click="unlockAllTeams">Ontgrendel Alle Teams</x-buttons.primary>
                 @else
-                    <x-buttons.danger wire:click="lockAllTeams">Lock All Teams</x-buttons.danger>
+                    <x-buttons.danger wire:click="lockAllTeams">Vergrendel Alle Teams</x-buttons.danger>
                 @endif
             </x-content.stack-layout>
         </x-content.stack-layout>
@@ -102,7 +107,7 @@
         <div class="fixed inset-0 bg-gray-800 bg-opacity-75 grid place-items-center justify-center text-white">
             <div class="flex flex-col items-center gap-2 rounded bg-gray-800 p-4 shadow">
                 <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-200"></div>
-                Loading...
+                Aan het laden...
             </div>
         </div>
     </div>

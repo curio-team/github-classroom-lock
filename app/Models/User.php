@@ -45,6 +45,11 @@ class User extends Authenticatable
         'chats_remaining' => 'array',
     ];
 
+    public function isTeacher(): bool
+    {
+        return $this->type === 'teacher';
+    }
+
     /**
      * Returns the chat limits for the user.
      */

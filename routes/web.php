@@ -35,7 +35,7 @@ Route::middleware(['guest'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function(Request $request) {
-        if($request->user()->type == 'teacher') {
+        if($request->user()->isTeacher()) {
             return redirect()->route('dashboard.teacher');
         } else {
             return redirect()->route('dashboard.student');

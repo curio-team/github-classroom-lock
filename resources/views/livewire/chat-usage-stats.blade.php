@@ -1,7 +1,7 @@
 <x-content.section tight class="flex flex-col gap-2 rounded border-slate-400 border"
     x-data="{}"
     x-on:app-chat-received.window="$wire.$refresh()">
-    <x-headings.page class="text-center p-4">Your remaining chats this hour</x-heading.h1>
+    <x-headings.page class="text-center p-4">Jouw overgebleven chats dit uur</x-heading.h1>
 
     <x-content.stack-layout row class="items-stretch bg-gray-100 p-4">
         @foreach($chatLimits as $gpt => $chatLimit)
@@ -10,10 +10,10 @@
 
                 <p class="text-4xl flex flex-col gap-2">
                 @if ($chatLimit === 0)
-                    Out of chats
+                    Geen
                 @elseif ($chatLimit === -1)
-                    Unlimited
-                    <span class="text-sm italic">while supplies last</span>
+                    Onbeperkt
+                    <span class="text-sm italic">zolang de voorraad strekt</span>
                 @else
                     {{ $chatLimit }}
                 @endif
@@ -23,7 +23,7 @@
     </x-content.stack-layout>
 
     <div class="flex flex-col gap-2 p-4 grow text-center">
-        <h2 class="uppercase font-semibold">Time until reset</h2>
+        <h2 class="uppercase font-semibold">Tijd tot je weer nieuwe chats krijgt</h2>
 
         <div class="text-4xl flex flex-row justify-center gap-2"
             id="timeReset">
@@ -49,7 +49,7 @@
                     const seconds = Math.floor((timeUntilReset % (1000 * 60)) / 1000);
 
                     timeReset.innerHTML = `
-                        <span class="text-4xl">${hours > 0 ? (hours+'h') : '<span class="text-slate-300">0h</span>'}</span>
+                        <span class="text-4xl">${hours > 0 ? (hours+'u') : '<span class="text-slate-300">0u</span>'}</span>
                         <span class="text-4xl">${minutes > 0 ? (minutes+'m') : '<span class="text-slate-300">0m</span>'}</span>
                         <span class="text-4xl">${seconds}s</span>
                     `;

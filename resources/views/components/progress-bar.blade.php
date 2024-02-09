@@ -14,7 +14,7 @@
             <span class="text-slate-300">{{ $value }} / {{ $max }}</span>
         </div>
         <div class="h-4 bg-slate-200 rounded">
-            <div class="{{ $color }} h-full rounded" style="width: {{ $value / $max * 100 }}%"></div>
+            <div class="{{ $color }} h-full rounded @if ($max - $value < 1000) animate-pulse @endif" style="width: {{ $value / $max * 100 }}%"></div>
         </div>
     </div>
 </div>

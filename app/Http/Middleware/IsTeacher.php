@@ -15,7 +15,7 @@ class IsTeacher
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if($request->user()->type == 'teacher') {
+        if($request->user()->isTeacher()) {
             return $next($request);
         }
 

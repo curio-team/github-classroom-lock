@@ -25,20 +25,25 @@
 
             <!-- Left Side Of Navbar -->
             <x-content.stack-layout row class="md:grow">
+                @auth
                 <x-buttons.link
                     href="{{ route('dashboard.student') }}">
                     CurioGPT
                 </x-buttons.link>
+
+                @if (user()->isTeacher())
+                    <x-buttons.link
+                        href="{{ route('dashboard.teacher') }}">
+                        Docent Dashboard
+                    </x-buttons.link>
+                @endif
+                @endauth
             </x-content.stack-layout>
 
             <!-- Right Side Of Navbar -->
             <x-content.stack-layout row class="items-center">
-                <!-- Authentication Links -->
                 @guest
-                    <x-buttons.link href="{{ route('login') }}">{{ __('Login') }}</x-buttons.link>
-                    @if (Route::has('register'))
-                        <x-buttons.link href="{{ route('register') }}">{{ __('Register') }}</x-buttons.link>
-                    @endif
+                    <x-buttons.link href="{{ route('login') }}">{{ __('Inloggen') }}</x-buttons.link>
                 @else
                     <x-buttons.link
                         target="_blank"
@@ -50,7 +55,7 @@
                         method="POST">
                         @csrf
                         <x-buttons.primary submit>
-                            {{ __('Logout') }}
+                            {{ __('Log uit') }}
                         </x-buttons.primary>
                     </form>
                 @endguest
