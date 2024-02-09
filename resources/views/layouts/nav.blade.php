@@ -1,5 +1,5 @@
 <nav x-data="{ openSidebar: false }" class="bg-white shadow-sm py-4 px-8">
-    <x-content.stack-layout row class="items-center justify-between max-w-prose mx-auto">
+    <x-content.stack-layout row class="items-center justify-between max-w-4xl mx-auto">
         <a class="max-w-[100px] grow"
            href="{{ route('dashboard') }}">
             <x-logos.light-logo />

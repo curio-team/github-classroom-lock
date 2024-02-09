@@ -1,6 +1,10 @@
+@props([
+    'tight' => false,
+])
 <div {{
-    $attributes->merge([
-        'class' => 'flex flex-col gap-2 p-4 sm:p-8 bg-white shadow sm:rounded-lg text-gray-900'
+    $attributes->class([
+        'flex flex-col bg-white shadow sm:rounded-lg text-gray-900',
+        'p-4 sm:p-8 gap-2' => !$tight,
     ])
 }}>
     {{ $slot }}

@@ -1,4 +1,4 @@
-<div class="rounded bg-slate-500 border border-slate-600 p-4">
+<x-content.section tight class="rounded !bg-slate-500 border border-slate-600 p-4">
     <div class="flex">
         <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-slate-400"
@@ -15,4 +15,4 @@
             </p>
         </div>
     </div>
-</div>
+</x-content.section>

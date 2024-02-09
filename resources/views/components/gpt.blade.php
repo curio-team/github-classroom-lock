@@ -1,82 +1,103 @@
 @props(['isChatActive' => false])
 
-<x-notice>
-    CurioGPT is provided as is and with no guarantees. It may not always be available. As with all AI, it may produce incorrect or inappropriate responses. Please use it responsibly.
-</x-notice>
-
-@unless ($isChatActive)
-<x-notice>
-    CurioGPT is currently locked. It is only active during examination times. Please ask your teacher to unlock it.
-</x-notice>
-@else
-<x-notice>
-    This chat is not saved. When you refresh the page, the chat will be gone.
-</x-notice>
-<div class="flex flex-col h-[500px] border border-slate-400 rounded">
-    <ul class="flex flex-row border-b border-slate-400">
-        <li class="flex-1 text-center rounded-tr bg-slate-200 p-4 text-black">
-            <input type="radio"
-                    name="model"
-                    value="gpt-3.5-turbo"
-                    id="model-3.5"
-                    checked>
-            <label for="model-3.5">GPT 3.5-turbo</label>
-        </li>
-        <li class="flex-1 text-center rounded-tl bg-slate-200 p-4 text-black border-l border-slate-400">
-            <input type="radio"
-                    name="model"
-                    value="gpt-4"
-                    id="model-4">
-            <label for="model-4">GPT 4</label>
-        </li>
-    </ul>
-
-    <div class="flex flex-col overflow-y-scroll flex-1 bg-slate-300">
-        <div id="chat-history"
-                class="flex flex-col p-5"></div>
-    </div>
-
-    <form class="flex border-t border-slate-400"
-            id="ai_form"
-            action="#"
-            method="POST">
-        <fieldset class="group flex flex-row w-full">
-            @csrf
-            <input type="text"
-                name="prompt"
-                id="prompt"
-                placeholder="Enter your prompt here..."
-                class="flex-grow border-transparent rounded-bl p-4 bg-slate-200 text-black">
-
-            <button type="submit"
-                    class="flex-shrink-0 bg-emerald-200 border-emerald-600 text-black p-4 rounded-br disabled:opacity-50 disabled:cursor-not-allowed">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                    class="w-4 h-4 text-gray-600 group-disabled:hidden">
-                    <path stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                </svg>
-                <svg xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="w-4 h-4 hidden group-disabled:block animate-spin">
-                    <path stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                </svg>
+<div x-data="{ maximized: false }"
+     x-bind:class="{ 'fixed inset-0 bg-black': maximized }">
+    <x-content.section tight
+                       id="chat-section"
+                       x-bind:class="{ 'h-full': maximized, 'h-[600px]': !maximized }"
+                       class="flex flex-col border border-slate-400 rounded">
+        <div class="flex flex-row border-b border-slate-400">
+            <label for="model-3.5"
+                   class="flex-1 text-center rounded-tl bg-slate-200 p-4 hover:bg-slate-300 cursor-pointer">
+                <input type="radio"
+                       name="model"
+                       value="gpt-3.5-turbo"
+                       id="model-3.5"
+                       checked>
+                GPT 3.5-turbo
+            </label>
+            <label
+                   class="flex-1 text-center bg-slate-200 p-4 border-l border-slate-400 hover:bg-slate-300 cursor-pointer">
+                <input type="radio"
+                       name="model"
+                       value="gpt-4"
+                       id="model-4">
+                GPT 4
+            </label>
+            <button class="flex-shrink text-center rounded-tr bg-slate-200 p-4 text-black border-l border-slate-400 hover:bg-slate-300 cursor-pointer"
+                    type="button"
+                    title="Maximize chat"
+                    aria-label="Maximize chat"
+                    @click="maximized = !maximized">
+                <x-icons.maximize x-show="!maximized" />
+                <x-icons.minimize x-show="maximized" />
             </button>
-        </fieldset>
-    </form>
-</div>
+        </div>
 
-<script>
-    const formEl = document.getElementById('ai_form');
+        <div class="flex flex-col overflow-y-scroll gap-2 flex-1 bg-slate-300 p-5">
+            <x-notice>
+                CurioGPT is provided as is and with no guarantees. It may not always be available. As with all AI, it
+                may
+                produce
+                incorrect or inappropriate responses. Please use it responsibly.
+            </x-notice>
+
+            @unless ($isChatActive)
+            <x-notice>
+                CurioGPT is currently locked. It is only active during examination times. Please ask your teacher to
+                unlock
+                it.
+            </x-notice>
+            @else
+            <x-notice>
+                This chat is not saved. When you refresh the page, the chat will be gone.
+            </x-notice>
+
+            <div id="chat-history"
+                 class="flex flex-col"></div>
+        </div>
+
+        <form class="flex border-t border-slate-400"
+              id="ai-form"
+              action="#"
+              method="POST">
+            <fieldset class="group flex flex-row w-full">
+                @csrf
+                <input type="text"
+                       name="prompt"
+                       id="prompt"
+                       placeholder="Enter your prompt here..."
+                       class="flex-grow border-transparent rounded-bl p-4 bg-slate-200 text-black">
+
+                <button type="submit"
+                        class="flex-shrink-0 bg-emerald-200 border-emerald-600 text-black p-4 rounded-br disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke-width="2"
+                         stroke="currentColor"
+                         class="w-4 h-4 text-gray-600 group-disabled:hidden">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke-width="1.5"
+                         stroke="currentColor"
+                         class="w-4 h-4 hidden group-disabled:block animate-spin">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
+                </button>
+            </fieldset>
+        </form>
+    </x-content.section>
+
+    <script>
+        const formEl = document.getElementById('ai-form');
     const promptEl = document.getElementById('prompt');
     const chatHistory = document.getElementById('chat-history');
     const csrfEl = document.querySelector('meta[name="csrf-token"]');
@@ -137,6 +158,17 @@
 
     function chatScrollToBottom() {
         chatHistory.parentElement.scrollTop = chatHistory.parentElement.scrollHeight;
+    }
+
+    function maximizeChat() {
+        const chatSection = document.getElementById('chat-section');
+        chatSection.classList.toggle('fixed');
+
+        if (chatSection.classList.contains('fixed')) {
+            chatSection.style.height = '100vh';
+        } else {
+            chatSection.style.height = '';
+        }
     }
 
     formEl.addEventListener('submit', function(event) {
@@ -218,5 +250,6 @@
             }));
         });
     });
-</script>
-@endif
+    </script>
+    @endif
+</div>

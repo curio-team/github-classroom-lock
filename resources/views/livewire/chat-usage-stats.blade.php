@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-2 rounded border-slate-400 border"
+<x-content.section tight class="flex flex-col gap-2 rounded border-slate-400 border"
     x-data="{}"
     x-on:app-chat-received.window="$wire.$refresh()">
     <x-headings.page class="text-center p-4">Your remaining chats this hour</x-heading.h1>
@@ -57,4 +57,4 @@
             }, 1000);
         </script>
     </div>
-</div>
+</x-content.section>
