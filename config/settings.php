@@ -1,6 +1,6 @@
 <?php
 
-use App\Settings\GeneralSettings;
+use App\Settings\ChatSettings;
 
 return [
 
@@ -9,7 +9,7 @@ return [
      * put them (manually) here.
      */
     'settings' => [
-        GeneralSettings::class,
+        ChatSettings::class,
     ],
 
     /*

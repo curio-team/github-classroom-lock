@@ -2,14 +2,14 @@
 
 namespace App\Http\Livewire;
 
-use App\Settings\GeneralSettings;
+use App\Settings\ChatSettings;
 use Livewire\Component;
 
 class StudentDashboardPage extends Component
 {
     public $showArchived = false;
 
-    public function render(GeneralSettings $settings)
+    public function render(ChatSettings $settings)
     {
         $isChatActive = $settings->chat_active;
 

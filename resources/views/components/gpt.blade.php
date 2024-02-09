@@ -236,6 +236,11 @@
 
             console.log('Response received in full.');
             setFormDisabled(false);
+
+            window.dispatchEvent(new CustomEvent('app-chat-received', {
+                bubbles: true,
+                detail: {},
+            }));
         });
     });
 </script>

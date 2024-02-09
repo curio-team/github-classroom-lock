@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Settings\ChatSettings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -13,7 +13,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     public $incrementing = false;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -42,5 +42,54 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'chats_remaining' => 'array',
     ];
+
+    /**
+     * Returns the chat limits for the user.
+     */
+    public function getChatLimits(): array
+    {
+        $chatsRemaining = $this->chats_remaining;
+        $chatLimitsReset = $this->chat_limits_reset;
+
+        if (!$chatLimitsReset || now()->gt($chatLimitsReset)) {
+            $chatsRemaining = ChatSettings::getChatPerHour();
+            $this->chats_remaining = $chatsRemaining;
+            $this->chat_limits_reset = now()->addHour();
+            $this->save();
+        }
+
+        return $chatsRemaining;
+    }
+
+    /**
+     * Returns whether the user has tokens to prompt this GPT.
+     */
+    public function canChatWithModel(string $model): bool
+    {
+        $chatsRemaining = $this->getChatLimits();
+
+        if ($chatsRemaining[$model] === -1) {
+            return true;
+        }
+
+        return $chatsRemaining[$model] > 0;
+    }
+
+    /**
+     * Uses a chat token for the given model.
+     */
+    public function registerChatWithModel(string $model): void
+    {
+        $chatsRemaining = $this->getChatLimits();
+
+        if ($chatsRemaining[$model] === -1) {
+            return;
+        }
+
+        $chatsRemaining[$model]--;
+        $this->chats_remaining = $chatsRemaining;
+        $this->save();
+    }
 }

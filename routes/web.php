@@ -1,6 +1,6 @@
 <?php
 
-use App\Settings\GeneralSettings;
+use App\Settings\ChatSettings;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Livewire;
 
-use App\Settings\GeneralSettings;
+use App\Settings\ChatSettings;
 use Github\AuthMethod;
 use Github\Client;
 use Github\ResultPager;
@@ -13,7 +13,7 @@ class TeacherDashboardPage extends Component
 {
     public $showArchived = false;
 
-    public function render(GeneralSettings $settings)
+    public function render(ChatSettings $settings)
     {
         $teams = $this->showArchived ? \App\Models\Team::withArchived()->with('members')->get() : \App\Models\Team::with('members')->get();
         $isChatActive = $settings->chat_active;
@@ -230,7 +230,7 @@ class TeacherDashboardPage extends Component
     /**
      * Lock the GPT chat.
      */
-    public function lockChat(GeneralSettings $settings)
+    public function lockChat(ChatSettings $settings)
     {
         $settings->chat_active = false;
         $settings->save();
@@ -239,7 +239,7 @@ class TeacherDashboardPage extends Component
     /**
      * Unlock the GPT chat.
      */
-    public function unlockChat(GeneralSettings $settings)
+    public function unlockChat(ChatSettings $settings)
     {
         $settings->chat_active = true;
         $settings->save();

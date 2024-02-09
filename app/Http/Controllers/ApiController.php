@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Settings\GeneralSettings;
+use App\Settings\ChatSettings;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 
@@ -17,26 +17,36 @@ class ApiController extends Controller
         };
     }
 
-    public function performPrompt(Request $request, GeneralSettings $settings)
+    private function fakeAnswerString(string $answer)
     {
-        if (!$settings->chat_active) {
-            echo 'data: ' . json_encode([
-                'choices' => [
-                    [
-                        'delta' => [
-                            'content' => 'The chat is currently disabled. Please contact your teacher about it.'
-                        ]
+        return 'data: ' . json_encode([
+            'choices' => [
+                [
+                    'delta' => [
+                        'content' => $answer
                     ]
                 ]
-            ]) . "\n\n";
+            ]
+        ]) . "\n\ndata: [DONE]";
+    }
 
-            return 'data: [DONE]';
+    public function performPrompt(Request $request, ChatSettings $settings)
+    {
+        if (!$settings->chat_active) {
+            return $this->fakeAnswerString('The chat is currently disabled. Please contact your teacher about it.');
         }
 
-        $apiKey = env('OPENAI_API_KEY');
         $model = self::getModelId($request->input('model'));
+
+        if (!user()->canChatWithModel($model)) {
+            return $this->fakeAnswerString('You do not have enough chat tokens to prompt '. $model .'. Try again later.');
+        }
+
+        user()->registerChatWithModel($model);
+
+        $apiKey = env('OPENAI_API_KEY');
         $history = $request->input('history');
-        $prompt = $request->input('prompt');
+        // $prompt = $request->input('prompt'); // Is already in the history
 
         $client = new Client([
             'base_uri' => 'https://api.openai.com/v1/',
