@@ -19,15 +19,9 @@ class ApiController extends Controller
 
     private function fakeAnswerString(string $answer)
     {
-        return 'data: ' . json_encode([
-            'choices' => [
-                [
-                    'delta' => [
-                        'content' => $answer
-                    ]
-                ]
-            ]
-        ]) . "\n\ndata: [DONE]";
+        return json_encode([
+            'content' => $answer
+        ]) . "\n\n";
     }
 
     public function performPrompt(Request $request, ChatSettings $settings)
@@ -42,11 +36,20 @@ class ApiController extends Controller
             return $this->fakeAnswerString('You do not have enough chat tokens to prompt '. $model .'. Try again later.');
         }
 
-        user()->registerChatWithModel($model);
-
         $apiKey = env('OPENAI_API_KEY');
         $history = $request->input('history');
-        // $prompt = $request->input('prompt'); // Is already in the history
+
+        $promptMessage = $history[count($history) - 1];
+
+        if ($promptMessage['role'] !== 'user') {
+            return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again, perhaps first refreshing the page.');
+        }
+
+        if ($promptMessage['content'] === null || $promptMessage['content'] === '') {
+            return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again.');
+        }
+
+        user()->registerChatWithModel($model);
 
         $client = new Client([
             'base_uri' => 'https://api.openai.com/v1/',

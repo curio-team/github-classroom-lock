@@ -1,6 +1,10 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import Clipboard from '@ryangjchandler/alpine-clipboard';
+import Tooltip from "@ryangjchandler/alpine-tooltip";
+Alpine.plugin(Clipboard)
+Alpine.plugin(Tooltip);
 window.Alpine = Alpine;
 Alpine.start();
 
@@ -9,8 +13,8 @@ import 'notyf/notyf.min.css'; // for React, Vue and Svelte
 
 window.Notyf = new Notyf();
 
-import { Marked } from "marked";
-import { markedHighlight } from "marked-highlight";
+import { Marked } from 'marked';
+import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 

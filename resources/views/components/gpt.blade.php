@@ -93,160 +93,170 @@
         </form>
     </x-content.section>
 
+    <div id="message-template"
+         class="message-container group flex flex-col mb-2 hidden">
+        <p class="author text-xs text-slate-400 mb-1"></p>
+        <div class="message flex flex-row mb-2">
+            <div class="relative message-content flex flex-col rounded p-4 text-black">
+                <x-buttons.secondary class="absolute opacity-50 top-0 right-0 -mt-2 -mr-2 hidden group-hover:block"
+                                     tight
+                                     title="Copy message"
+                                     aria-label="Copy message"
+                                     @click="$tooltip('Copied to clipboard!')"
+                                     x-clipboard="$el.parentElement.querySelector('.chat-message-text').innerText">
+                    <x-slot name="icon">
+                        <x-icons.copy />
+                    </x-slot>
+                </x-buttons.secondary>
+                <p class="chat-message-text"></p>
+            </div>
+        </div>
+    </div>
+
     <script>
         const formEl = document.getElementById('ai-form');
-    const promptEl = document.getElementById('prompt');
-    const chatHistory = document.getElementById('chat-history');
-    const csrfEl = document.querySelector('meta[name="csrf-token"]');
-    const fieldsetEl = formEl.querySelector('fieldset');
-    const history = [];
+        const promptEl = document.getElementById('prompt');
+        const chatHistory = document.getElementById('chat-history');
+        const csrfEl = document.querySelector('meta[name="csrf-token"]');
+        const fieldsetEl = formEl.querySelector('fieldset');
+        const history = [];
 
-    function setFormDisabled(disabled) {
-        if (disabled) {
-            fieldsetEl.setAttribute('disabled', 'disabled');
-        } else {
-            fieldsetEl.removeAttribute('disabled');
-        }
-    }
-
-    // Adds a message to the history element and history array
-    // It returns the message element so further modifications can be made
-    function addMessage(message, isSender)
-    {
-        const messageContainerEl = document.createElement('div');
-        messageContainerEl.classList.add('flex', 'flex-col', 'mb-2');
-
-        const messageEl = document.createElement('div');
-        messageEl.classList.add('flex', 'flex-row', 'mb-2');
-
-        const authorEl = document.createElement('p');
-        authorEl.classList.add('inline', 'text-xs', 'text-slate-400', 'mb-1');
-        authorEl.innerText = isSender === true ? 'You:' : 'CurioGPT:';
-        messageContainerEl.appendChild(authorEl);
-
-        const messageContentEl = document.createElement('div');
-        messageContentEl.classList.add('flex', 'flex-col', 'rounded', 'p-4', 'text-black');
-
-        if (isSender === true) {
-            messageContentEl.classList.add('bg-emerald-200');
-            messageContainerEl.classList.add('self-end', 'ml-8');
-        } else {
-            messageContentEl.classList.add('bg-slate-200');
-            messageContainerEl.classList.add('self-start', 'mr-8');
+        function setFormDisabled(disabled) {
+            if (disabled) {
+                fieldsetEl.setAttribute('disabled', 'disabled');
+            } else {
+                fieldsetEl.removeAttribute('disabled');
+            }
         }
 
-        const messageTextEl = document.createElement('p');
-        messageTextEl.classList.add('chat-message-text');
-        messageTextEl.innerText = message;
+        // Adds a message to the history element and history array
+        // It returns the message element so further modifications can be made
+        function addMessage(message, isSender) {
+            const template = document.getElementById('message-template');
+            const messageContainerEl = template.cloneNode(true);
+            messageContainerEl.id = ''; // Remove the id to avoid duplicates
+            messageContainerEl.classList.remove('hidden');
 
-        messageContentEl.appendChild(messageTextEl);
-        messageEl.appendChild(messageContentEl);
-        messageContainerEl.appendChild(messageEl);
-        chatHistory.appendChild(messageContainerEl);
+            const authorEl = messageContainerEl.querySelector('.author');
+            authorEl.innerText = isSender === true ? 'You:' : 'CurioGPT:';
 
-        const author = isSender === true ? 'user' : 'assistant';
-        history.push({
-            role: author,
-            content: message,
-        });
-
-        return messageTextEl;
-    }
-
-    function chatScrollToBottom() {
-        chatHistory.parentElement.scrollTop = chatHistory.parentElement.scrollHeight;
-    }
-
-    function maximizeChat() {
-        const chatSection = document.getElementById('chat-section');
-        chatSection.classList.toggle('fixed');
-
-        if (chatSection.classList.contains('fixed')) {
-            chatSection.style.height = '100vh';
-        } else {
-            chatSection.style.height = '';
-        }
-    }
-
-    formEl.addEventListener('submit', function(event) {
-        event.preventDefault();
-
-        setFormDisabled(true);
-
-        const prompt = promptEl.value;
-        const model = document.querySelector('input[name="model"]:checked').value;
-        const aiRequestRoute = '{{ route('ai-request') }}';
-        const csrfToken = csrfEl.getAttribute('content');
-
-        addMessage(prompt, true);
-        const messageTextEl = addMessage('...');
-
-        promptEl.value = '';
-
-        fetch(aiRequestRoute, {
-            method: 'POST',
-            headers:{
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-            },
-            body: JSON.stringify({
-                model: model,
-                history: history.slice(0, -1),
-                prompt: prompt,
-            }),
-        })
-        .then(response => response.body)
-        .then(async body => {
-            const reader = body.pipeThrough(new TextDecoderStream()).getReader();
-
-            let currentMessage = '';
-            messageTextEl.innerText = currentMessage;
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                // Parse the JSON output from PHP, splitting it by the separator
-                const chunks = value.split('\n\n');
-                chunks.forEach(chunk => {
-                    if (chunk.length === 0) {
-                        return;
-                    }
-
-                    const parsed = JSON.parse(chunk);
-                    currentMessage += parsed.content;
-
-                    // If parsed.content ends with one or more newlines, call marked.parse to convert all text until now to HTML
-                    if (parsed.content.endsWith('\n')) {
-                        const html = marked.parse(currentMessage);
-                        messageTextEl.innerHTML = html;
-                        return;
-                    }
-
-                    const span = document.createElement('span');
-                    span.innerText = parsed.content;
-                    span.classList.add('opacity-0', 'transition-opacity')
-
-                    messageTextEl.appendChild(span);
-
-                    // Fade in the span
-                    setTimeout(() => {
-                        span.classList.remove('opacity-0');
-                    }, 1);
-
-                    chatScrollToBottom();
-                });
+            const messageContentEl = messageContainerEl.querySelector('.message-content');
+            if (isSender === true) {
+                messageContentEl.classList.add('bg-emerald-200');
+                messageContainerEl.classList.add('self-end', 'ml-8');
+            } else {
+                messageContentEl.classList.add('bg-slate-200');
+                messageContainerEl.classList.add('self-start', 'mr-8');
             }
 
-            messageTextEl.innerHTML = marked.parse(currentMessage);
-            setFormDisabled(false);
+            const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
+            messageTextEl.innerText = message;
 
-            window.dispatchEvent(new CustomEvent('app-chat-received', {
-                bubbles: true,
-                detail: {},
-            }));
+            const chatHistory = document.getElementById('chat-history');
+            chatHistory.appendChild(messageContainerEl);
+
+            const author = isSender === true ? 'user' : 'assistant';
+            history.push({
+                role: author,
+                content: message,
+            });
+
+            return messageTextEl;
+        }
+
+        function chatScrollToBottom() {
+            chatHistory.parentElement.scrollTop = chatHistory.parentElement.scrollHeight;
+        }
+
+        function maximizeChat() {
+            const chatSection = document.getElementById('chat-section');
+            chatSection.classList.toggle('fixed');
+
+            if (chatSection.classList.contains('fixed')) {
+                chatSection.style.height = '100vh';
+            } else {
+                chatSection.style.height = '';
+            }
+        }
+
+        formEl.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            setFormDisabled(true);
+
+            const prompt = promptEl.value;
+            const model = document.querySelector('input[name="model"]:checked').value;
+            const aiRequestRoute = '{{ route('ai-request') }}';
+            const csrfToken = csrfEl.getAttribute('content');
+
+            addMessage(prompt, true);
+            const messageTextEl = addMessage('...');
+
+            promptEl.value = '';
+
+            fetch(aiRequestRoute, {
+                method: 'POST',
+                headers:{
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: JSON.stringify({
+                    model: model,
+                    history: history.slice(0, -1), // Remove the last message, which is the '...' loading message
+                }),
+            })
+            .then(response => response.body)
+            .then(async body => {
+                const reader = body.pipeThrough(new TextDecoderStream()).getReader();
+
+                let currentMessage = '';
+                messageTextEl.innerText = currentMessage;
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    // Parse the JSON output from PHP, splitting it by the separator
+                    const chunks = value.split('\n\n');
+                    chunks.forEach(chunk => {
+                        if (chunk.length === 0) {
+                            return;
+                        }
+
+                        const parsed = JSON.parse(chunk);
+                        currentMessage += parsed.content;
+
+                        // If parsed.content ends with one or more newlines, call marked.parse to convert all text until now to HTML
+                        if (parsed.content.endsWith('\n')) {
+                            const html = marked.parse(currentMessage);
+                            messageTextEl.innerHTML = html;
+                            return;
+                        }
+
+                        const span = document.createElement('span');
+                        span.innerText = parsed.content;
+                        span.classList.add('opacity-0', 'transition-opacity')
+
+                        messageTextEl.appendChild(span);
+
+                        // Fade in the span
+                        setTimeout(() => {
+                            span.classList.remove('opacity-0');
+                        }, 1);
+
+                        chatScrollToBottom();
+                    });
+                }
+
+                messageTextEl.innerHTML = marked.parse(currentMessage);
+                setFormDisabled(false);
+
+                window.dispatchEvent(new CustomEvent('app-chat-received', {
+                    bubbles: true,
+                    detail: {},
+                }));
+            });
         });
-    });
     </script>
     @endif
 </div>
