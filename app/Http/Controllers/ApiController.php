@@ -176,13 +176,11 @@ class ApiController extends Controller
                         'content' => 'Sorry, ik kon geen antwoord van de AI krijgen. Het lijkt erop dat de tokenlimiet is bereikt. Vernieuw de pagina om een nieuwe chat te starten of gebruik de knop om door te gaan met een samenvatting van het bovenstaande.',
                         'can_be_summarized' => true,
                         'error' => $e->getMessage(),
-                        'history' => $history,
                     ]) . "\n\n";
                 } else {
                     echo json_encode([
                         'content' => 'Sorry, ik kon geen antwoord van de AI krijgen. Probeer het later opnieuw of vernieuw de pagina om een nieuwe chat te starten.',
                         'error' => $e->getMessage(),
-                        'history' => $history,
                     ]) . "\n\n";
                 }
             }
