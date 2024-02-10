@@ -101,7 +101,10 @@ class ApiController extends Controller
                                 echo json_encode([
                                     'content' => $content,
                                 ]) . "\n\n";
-                                flush(); // Force the response to be sent to the client (to avoid buffering)
+
+                                // Force the response to be sent to the client (to avoid buffering)
+                                ob_end_flush();
+                                flush();
                             }
                         }
                     }
