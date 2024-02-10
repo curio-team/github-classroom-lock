@@ -46,7 +46,7 @@ class ApiController extends Controller
             return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again, perhaps first refreshing the page.');
         }
 
-        if ($promptMessage['content'] === null || $promptMessage['content'] === '') {
+        if ($promptMessage['content'] === '') {
             return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again.');
         }
 
@@ -125,11 +125,15 @@ class ApiController extends Controller
 
                 if ($statusCode === 400) {
                     echo json_encode([
-                        'content' => 'Sorry, I couldn\'t get a response from the AI. It seems that the token limit has been reached. Please refresh the page to start a new chat.'
+                        'content' => 'Sorry, I couldn\'t get a response from the AI. It seems that the token limit has been reached. Please refresh the page to start a new chat.',
+                        'error' => $e->getMessage(),
+                        'history' => $history
                     ]) . "\n\n";
                 } else {
                     echo json_encode([
-                        'content' => 'Sorry, I couldn\'t get a response from the AI. Please try again later or refresh the page to start a new chat. Status code: ' . $statusCode
+                        'content' => 'Sorry, I couldn\'t get a response from the AI. Please try again later or refresh the page to start a new chat.',
+                        'error' => $e->getMessage(),
+                        'history' => $history
                     ]) . "\n\n";
                 }
             }

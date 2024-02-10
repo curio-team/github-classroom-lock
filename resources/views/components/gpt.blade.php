@@ -56,15 +56,17 @@
 
         <form class="flex border-t border-slate-400"
               id="ai-form"
-              action="#"
               method="POST">
             <fieldset class="group flex flex-row w-full">
                 @csrf
-                <input type="text"
-                       name="prompt"
-                       id="prompt"
-                       placeholder="Voer je prompt hier in..."
-                       class="flex-grow border-transparent rounded-bl p-4 bg-slate-200 text-black">
+                <textarea name="prompt"
+                          id="prompt"
+                          role="presentation"
+                          autocomplete="off"
+                          placeholder="Voer je prompt hier in..."
+                          rows="1"
+                          cols="1"
+                          class="flex-grow border-transparent rounded-bl p-4 bg-slate-200 text-black"></textarea>
 
                 <button type="submit"
                         class="flex-shrink-0 bg-emerald-200 border-emerald-600 text-black p-4 rounded-br disabled:opacity-50 disabled:cursor-not-allowed">
@@ -118,21 +120,27 @@
         const promptEl = document.getElementById('prompt');
         const chatHistory = document.getElementById('chat-history');
         const csrfEl = document.querySelector('meta[name="csrf-token"]');
-        const fieldsetEl = formEl.querySelector('fieldset');
+        const submitButtonEl = formEl.querySelector('fieldset button');
+        const template = document.getElementById('message-template');
+        let lastScrollByUser = 0;
         const history = [];
 
         function setFormDisabled(disabled) {
             if (disabled) {
-                fieldsetEl.setAttribute('disabled', 'disabled');
+                submitButtonEl.setAttribute('disabled', 'disabled');
             } else {
-                fieldsetEl.removeAttribute('disabled');
+                submitButtonEl.removeAttribute('disabled');
             }
+        }
+
+        function sizePromptEl() {
+            const rows = Math.max(1, Math.min(promptEl.value.split('\n').length - 1, 10));
+            promptEl.rows = rows;
         }
 
         // Adds a message to the history element and history array
         // It returns the message element so further modifications can be made
         function addMessage(message, isSender) {
-            const template = document.getElementById('message-template');
             const messageContainerEl = template.cloneNode(true);
             messageContainerEl.id = ''; // Remove the id to avoid duplicates
             messageContainerEl.classList.remove('hidden');
@@ -152,7 +160,6 @@
             const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
             messageTextEl.innerText = message;
 
-            const chatHistory = document.getElementById('chat-history');
             chatHistory.appendChild(messageContainerEl);
 
             const author = isSender === true ? 'user' : 'assistant';
@@ -165,8 +172,18 @@
         }
 
         function chatScrollToBottom() {
+            if (lastScrollByUser + 1000 > Date.now()) {
+                return;
+            }
+
             chatHistory.parentElement.scrollTop = chatHistory.parentElement.scrollHeight;
         }
+
+        chatHistory.parentElement.addEventListener('scroll', function() {
+            if (chatHistory.parentElement.scrollTop + chatHistory.parentElement.clientHeight < chatHistory.parentElement.scrollHeight) {
+                lastScrollByUser = Date.now();
+            }
+        });
 
         function maximizeChat() {
             const chatSection = document.getElementById('chat-section');
@@ -179,12 +196,15 @@
             }
         }
 
-        formEl.addEventListener('submit', function(event) {
-            event.preventDefault();
+        function submitPrompt() {
+            let prompt = promptEl.value;
+
+            if (prompt.trim() === '') {
+                return;
+            }
 
             setFormDisabled(true);
 
-            const prompt = promptEl.value;
             const model = document.querySelector('input[name="model"]:checked').value;
             const aiRequestRoute = '{{ route('ai-request') }}';
             const csrfToken = csrfEl.getAttribute('content');
@@ -194,6 +214,7 @@
             const { messageTextEl, historyLength } = addMessage('...');
 
             promptEl.value = '';
+            sizePromptEl();
 
             fetch(aiRequestRoute, {
                 method: 'POST',
@@ -258,6 +279,65 @@
                     detail: {},
                 }));
             });
+        }
+
+        promptEl.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+
+                if (!event.shiftKey) {
+                    submitPrompt();
+                    return;
+                }
+
+                promptEl.value += '\n';
+
+                sizePromptEl();
+                return;
+            }
+
+            if (event.key === 'Backspace') {
+                sizePromptEl();
+                return;
+            }
+
+            // When someone pastes also resize
+            if (event.key === 'v' && (event.metaKey || event.ctrlKey)) {
+                setTimeout(sizePromptEl, 1);
+            }
+
+            if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                const historyLength = history.length;
+
+                if (historyLength === 0) {
+                    return;
+                }
+
+                const currentPrompt = promptEl.value;
+                const currentIndex = history.findIndex(message => message.content === currentPrompt && message.role === 'user');
+                let newIndex = currentIndex;
+
+                if (event.key === 'ArrowDown') {
+                    newIndex = currentIndex === -1 ? historyLength - 2 : currentIndex - 2;
+                } else if (event.key === 'ArrowUp') {
+                    newIndex = currentIndex === -1 ? 0 : currentIndex + 2;
+                }
+
+                if (newIndex < 0 || newIndex >= historyLength) {
+                    promptEl.value = '';
+                    sizePromptEl();
+                    return;
+                }
+
+                promptEl.value = history[newIndex].content;
+                sizePromptEl();
+            }
+        });
+
+        formEl.addEventListener('submit', function(event) {
+            event.preventDefault();
+            submitPrompt();
         });
     </script>
     @endif
