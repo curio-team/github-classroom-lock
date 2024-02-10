@@ -26,6 +26,10 @@ class ApiController extends Controller
 
     public function performPrompt(Request $request, ChatSettings $settings)
     {
+        @ob_end_flush();
+        @flush();
+        header('X-Accel-Buffering: no');
+
         if (!$settings->chat_active) {
             return $this->fakeAnswerString('The chat is currently disabled. Please contact your teacher about it.');
         }
@@ -56,7 +60,7 @@ class ApiController extends Controller
             'stream' => true
         ]);
 
-        $response = $client->post('https://api.openai.com/v1/chat/completions', [
+        $apiResponse = $client->post('https://api.openai.com/v1/chat/completions', [
             'headers' => [
                 'Authorization' => 'Bearer ' . $apiKey,
                 'Content-Type' => 'application/json',
@@ -69,7 +73,7 @@ class ApiController extends Controller
             ],
         ]);
 
-        $body = $response->getBody();
+        $body = $apiResponse->getBody();
 
         $partialChunk = '';
         $chunkCount = 0;
