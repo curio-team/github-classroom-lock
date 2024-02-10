@@ -50,13 +50,13 @@ class ApiController extends Controller
     public function performPrompt(Request $request, ChatSettings $settings)
     {
         if (!$settings->chat_active) {
-            return $this->fakeAnswerString('The chat is currently disabled. Please contact your teacher about it.');
+            return $this->fakeAnswerString('De chat is momenteel uitgeschakeld. Neem contact op met je docent.');
         }
 
         $model = self::getModelId($request->input('model'));
 
         if (!user()->canChatWithModel($model)) {
-            return $this->fakeAnswerString('You do not have enough chat tokens to prompt '. $model .'. Try again later.');
+            return $this->fakeAnswerString('Je hebt niet genoeg chat tokens om '. $model .' te gebruiken. Probeer het later opnieuw.');
         }
 
         $history = $request->input('history');
@@ -92,12 +92,8 @@ class ApiController extends Controller
         } else {
             $promptMessage = $history[count($history) - 1];
 
-            if ($promptMessage['role'] !== 'user') {
-                return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again, perhaps first refreshing the page.');
-            }
-
             if ($promptMessage['content'] === '') {
-                return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again.');
+                return $this->fakeAnswerString('Sorry, ik heb je bericht niet begrepen. Probeer het opnieuw.');
             }
         }
 
@@ -177,14 +173,14 @@ class ApiController extends Controller
 
                 if ($statusCode === 400) {
                     echo json_encode([
-                        'content' => 'Sorry, I couldn\'t get a response from the AI. It seems that the token limit has been reached. Please refresh the page to start a new chat or use the button to continue with a summary of the above.',
+                        'content' => 'Sorry, ik kon geen antwoord van de AI krijgen. Het lijkt erop dat de tokenlimiet is bereikt. Vernieuw de pagina om een nieuwe chat te starten of gebruik de knop om door te gaan met een samenvatting van het bovenstaande.',
                         'can_be_summarized' => true,
                         'error' => $e->getMessage(),
                         'history' => $history,
                     ]) . "\n\n";
                 } else {
                     echo json_encode([
-                        'content' => 'Sorry, I couldn\'t get a response from the AI. Please try again later or refresh the page to start a new chat.',
+                        'content' => 'Sorry, ik kon geen antwoord van de AI krijgen. Probeer het later opnieuw of vernieuw de pagina om een nieuwe chat te starten.',
                         'error' => $e->getMessage(),
                         'history' => $history,
                     ]) . "\n\n";
