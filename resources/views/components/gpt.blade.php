@@ -140,16 +140,23 @@
 
         // Adds a message to the history element and history array
         // It returns the message element so further modifications can be made
-        function addMessage(message, isSender) {
+        function addMessage(message, role) {
             const messageContainerEl = template.cloneNode(true);
             messageContainerEl.id = ''; // Remove the id to avoid duplicates
             messageContainerEl.classList.remove('hidden');
 
             const authorEl = messageContainerEl.querySelector('.author');
-            authorEl.innerText = isSender === true ? 'You:' : 'CurioGPT:';
+
+            if (role === 'assistant') {
+                authorEl.innerText = 'CurioGPT:';
+            } else if (role === 'user') {
+                authorEl.innerText = 'Jij:';
+            } else {
+                authorEl.innerText = 'Samenvatting van eerdere gesprek:';
+            }
 
             const messageContentEl = messageContainerEl.querySelector('.message-content');
-            if (isSender === true) {
+            if (role === 'user') {
                 messageContentEl.classList.add('bg-emerald-200');
                 messageContainerEl.classList.add('self-end', 'ml-8');
             } else {
@@ -161,10 +168,10 @@
             messageTextEl.innerText = message;
 
             chatHistory.appendChild(messageContainerEl);
+            chatScrollToBottom();
 
-            const author = isSender === true ? 'user' : 'assistant';
             const historyLength = history.push({
-                role: author,
+                role,
                 content: message,
             });
 
@@ -196,25 +203,12 @@
             }
         }
 
-        function submitPrompt() {
-            let prompt = promptEl.value;
-
-            if (prompt.trim() === '') {
-                return;
-            }
-
-            setFormDisabled(true);
+        function performPrompt(onReceivedChunk, onReceivedFull, summarizeMode) {
+            summarizeMode = summarizeMode ? true : false;
 
             const model = document.querySelector('input[name="model"]:checked').value;
             const aiRequestRoute = '{{ route('ai-request') }}';
             const csrfToken = csrfEl.getAttribute('content');
-
-            addMessage(prompt, true);
-            chatScrollToBottom();
-            const { messageTextEl, historyLength } = addMessage('...');
-
-            promptEl.value = '';
-            sizePromptEl();
 
             fetch(aiRequestRoute, {
                 method: 'POST',
@@ -225,6 +219,7 @@
                 body: JSON.stringify({
                     model: model,
                     history: history.slice(0, -1), // Remove the last message, which is the '...' loading message
+                    should_summarize_history: summarizeMode,
                 }),
             })
             .then(response => response.body)
@@ -232,7 +227,7 @@
                 const reader = body.pipeThrough(new TextDecoderStream()).getReader();
 
                 let currentMessage = '';
-                messageTextEl.innerText = currentMessage;
+                let canBeSummarized = false;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -247,37 +242,88 @@
 
                         const parsed = JSON.parse(chunk);
                         currentMessage += parsed.content;
+                        canBeSummarized = parsed.can_be_summarized;
 
-                        // If parsed.content ends with one or more newlines, call marked.parse to convert all text until now to HTML
-                        if (parsed.content.endsWith('\n')) {
-                            const html = marked.parse(currentMessage);
-                            messageTextEl.innerHTML = html;
-                            return;
+                        if (onReceivedChunk) {
+                            onReceivedChunk(parsed.content, currentMessage);
                         }
-
-                        const span = document.createElement('span');
-                        span.innerText = parsed.content;
-                        span.classList.add('opacity-0', 'transition-opacity')
-
-                        messageTextEl.appendChild(span);
-
-                        // Fade in the span
-                        setTimeout(() => {
-                            span.classList.remove('opacity-0');
-                        }, 1);
-
-                        chatScrollToBottom();
                     });
                 }
 
-                messageTextEl.innerHTML = marked.parse(currentMessage);
-                history[historyLength - 1].content = currentMessage;
-                setFormDisabled(false);
+                if (onReceivedFull) {
+                    onReceivedFull(currentMessage, canBeSummarized);
+                }
 
                 window.dispatchEvent(new CustomEvent('app-chat-received', {
                     bubbles: true,
                     detail: {},
                 }));
+            });
+        }
+
+        function submitPrompt() {
+            let prompt = promptEl.value;
+
+            if (prompt.trim() === '') {
+                return;
+            }
+
+            setFormDisabled(true);
+
+            addMessage(prompt, 'user');
+            const { messageTextEl, historyLength } = addMessage('...', 'assistant');
+
+            promptEl.value = '';
+            sizePromptEl();
+
+            messageTextEl.innerText = '';
+
+            performPrompt(function(content, currentMessage) {
+                // If the content ends with one or more newlines, call marked.parse to convert all text until now to HTML
+                if (content.endsWith('\n')) {
+                    const html = marked.parse(currentMessage);
+                    messageTextEl.innerHTML = html;
+                    return;
+                }
+
+                const span = document.createElement('span');
+                span.innerText = content;
+                span.classList.add('opacity-0', 'transition-opacity')
+
+                messageTextEl.appendChild(span);
+
+                // Fade in the span
+                setTimeout(() => {
+                    span.classList.remove('opacity-0');
+                }, 1);
+                chatScrollToBottom();
+            }, function(currentMessage, canBeSummarized) {
+                messageTextEl.innerHTML = marked.parse(currentMessage);
+                history[historyLength - 1].content = currentMessage;
+
+                if (canBeSummarized) {
+                    const summarizeButton = document.createElement('button');
+                    summarizeButton.classList.add('text-xs', 'text-slate-400', 'hover:text-slate-600', 'cursor-pointer');
+                    summarizeButton.innerText = '» Vervang gehele chatgeschiedenis met samenvatting';
+                    summarizeButton.addEventListener('click', function() {
+                        setFormDisabled(true);
+                        chatHistory.innerHTML = '';
+                        addMessage('Bezig met samenvatten...', 'system');
+                        performPrompt(undefined, function(currentMessage) {
+                            // Set the history to the summarized message
+                            history.length = 0;
+                            chatHistory.innerHTML = '';
+                            addMessage(currentMessage, 'system');
+                            chatScrollToBottom();
+                            setFormDisabled(false);
+                        }, true);
+                    });
+
+                    messageTextEl.appendChild(summarizeButton);
+                }
+
+                setFormDisabled(false);
+                chatScrollToBottom();
             });
         }
 

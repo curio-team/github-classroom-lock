@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Yethee\Tiktoken\EncoderProvider;
 
 class ApiController extends Controller
 {
@@ -17,6 +18,26 @@ class ApiController extends Controller
             'gpt-3.5' => 'gpt-3.5-turbo',
             default => 'gpt-3.5-turbo',
         };
+    }
+
+    private static function getModelTokenLimit(string $model)
+    {
+        $summaryLength = strlen(json_encode(static::getSummaryPrompt('')));
+
+        return match ($model) {
+            'gpt-4' => 16000,
+            default => 4000
+        } - $summaryLength;
+    }
+
+    private static function getSummaryPrompt(string $encodedHistory)
+    {
+        return [
+            [
+                'role' => 'system',
+                'content' => 'Summarize this as short and concisely as possible without introduction:' . "\n" . $encodedHistory,
+            ],
+        ];
     }
 
     private function fakeAnswerString(string $answer)
@@ -39,15 +60,45 @@ class ApiController extends Controller
         }
 
         $history = $request->input('history');
+        $shouldSummarizeHistory = $request->input('should_summarize_history');
 
-        $promptMessage = $history[count($history) - 1];
+        if ($shouldSummarizeHistory) {
+            // JSON encode the history and ask the AI to summarize it
+            $encodedHistory = json_encode($history);
 
-        if ($promptMessage['role'] !== 'user') {
-            return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again, perhaps first refreshing the page.');
-        }
+            $provider = new EncoderProvider();
+            $encoder = $provider->getForModel($model);
 
-        if ($promptMessage['content'] === '') {
-            return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again.');
+            // Nasty hack to get under the token limit. We will lose context, but it's better than nothing
+            do {
+                $tokens = count($encoder->encode($encodedHistory));
+
+                if ($tokens > self::getModelTokenLimit($model) && count($history) > 2) {
+                    $history = array_slice($history, 1);
+                    $encodedHistory = json_encode($history);
+                }
+            } while ($tokens > self::getModelTokenLimit($model) && count($history) > 2);
+
+            // If it's still too long, we will just summarize the last message, but trim it to the token limit
+            if ($tokens > self::getModelTokenLimit($model)) {
+                $encodedHistoryTokens = $encoder->encode($encodedHistory);
+
+                if (count($encodedHistoryTokens) > self::getModelTokenLimit($model)) {
+                    $encodedHistory = $encoder->decode(array_slice($encodedHistoryTokens, 0, self::getModelTokenLimit($model)));
+                }
+            }
+
+            $history = self::getSummaryPrompt($encodedHistory);
+        } else {
+            $promptMessage = $history[count($history) - 1];
+
+            if ($promptMessage['role'] !== 'user') {
+                return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again, perhaps first refreshing the page.');
+            }
+
+            if ($promptMessage['content'] === '') {
+                return $this->fakeAnswerString('Sorry, I didn\'t get your message. Please try again.');
+            }
         }
 
         user()->registerChatWithModel($model);
@@ -55,7 +106,7 @@ class ApiController extends Controller
         // Flush whatever is in the output buffer so we can immediately send fully formed JSON responses
         @ob_end_flush();
 
-        return new StreamedResponse(function () use ($request, $model, $history) {
+        return new StreamedResponse(function () use ($request, $model, $history, $shouldSummarizeHistory) {
             $apiKey = env('OPENAI_API_KEY');
             $client = new Client([
                 'base_uri' => 'https://api.openai.com/v1/',
@@ -103,6 +154,7 @@ class ApiController extends Controller
 
                                     echo json_encode([
                                         'content' => $content,
+                                        'is_summary' => $shouldSummarizeHistory,
                                     ]) . "\n\n";
 
                                     // Force the response to be sent to the client (to avoid buffering)
@@ -125,15 +177,16 @@ class ApiController extends Controller
 
                 if ($statusCode === 400) {
                     echo json_encode([
-                        'content' => 'Sorry, I couldn\'t get a response from the AI. It seems that the token limit has been reached. Please refresh the page to start a new chat.',
+                        'content' => 'Sorry, I couldn\'t get a response from the AI. It seems that the token limit has been reached. Please refresh the page to start a new chat or use the button to continue with a summary of the above.',
+                        'can_be_summarized' => true,
                         'error' => $e->getMessage(),
-                        'history' => $history
+                        'history' => $history,
                     ]) . "\n\n";
                 } else {
                     echo json_encode([
                         'content' => 'Sorry, I couldn\'t get a response from the AI. Please try again later or refresh the page to start a new chat.',
                         'error' => $e->getMessage(),
-                        'history' => $history
+                        'history' => $history,
                     ]) . "\n\n";
                 }
             }
