@@ -156,12 +156,12 @@
             chatHistory.appendChild(messageContainerEl);
 
             const author = isSender === true ? 'user' : 'assistant';
-            history.push({
+            const historyLength = history.push({
                 role: author,
                 content: message,
             });
 
-            return messageTextEl;
+            return { messageTextEl, historyLength };
         }
 
         function chatScrollToBottom() {
@@ -190,7 +190,8 @@
             const csrfToken = csrfEl.getAttribute('content');
 
             addMessage(prompt, true);
-            const messageTextEl = addMessage('...');
+            chatScrollToBottom();
+            const { messageTextEl, historyLength } = addMessage('...');
 
             promptEl.value = '';
 
@@ -249,6 +250,7 @@
                 }
 
                 messageTextEl.innerHTML = marked.parse(currentMessage);
+                history[historyLength - 1].content = currentMessage;
                 setFormDisabled(false);
 
                 window.dispatchEvent(new CustomEvent('app-chat-received', {
