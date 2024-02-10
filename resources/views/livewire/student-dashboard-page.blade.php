@@ -1,5 +1,7 @@
 <x-content.main>
     <x-gpt :isChatActive="$isChatActive" />
 
-    @livewire('chat-usage-stats')
+    @if ($isChatActive)
+        @livewire('chat-usage-stats')
+    @endif
 </x-content.main>

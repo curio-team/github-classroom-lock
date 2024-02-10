@@ -2,6 +2,12 @@
 
 <div x-data="{ maximized: false }"
      x-bind:class="{ 'fixed inset-0 bg-black': maximized }">
+     @unless ($isChatActive)
+     <x-notice>
+         CurioGPT is momenteel vergrendeld. Het is alleen actief tijdens examens. Vraag je leraar om het te
+         ontgrendelen.
+     </x-notice>
+     @else
     <x-content.section tight
                        id="chat-section"
                        x-bind:class="{ 'h-full': maximized, 'h-[600px]': !maximized }"
@@ -40,12 +46,6 @@
                 beschikbaar is.
             </x-notice>
 
-            @unless ($isChatActive)
-            <x-notice>
-                CurioGPT is momenteel vergrendeld. Het is alleen actief tijdens examens. Vraag je leraar om het te
-                ontgrendelen.
-            </x-notice>
-            @else
             <x-notice>
                 Dit gesprek wordt niet opgeslagen. Wanneer je de pagina ververst, is het gesprek weg.
             </x-notice>
