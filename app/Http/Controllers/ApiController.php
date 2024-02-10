@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Settings\ChatSettings;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ApiController extends Controller
 {
@@ -26,10 +27,6 @@ class ApiController extends Controller
 
     public function performPrompt(Request $request, ChatSettings $settings)
     {
-        @ob_end_flush();
-        @flush();
-        header('X-Accel-Buffering: no');
-
         if (!$settings->chat_active) {
             return $this->fakeAnswerString('The chat is currently disabled. Please contact your teacher about it.');
         }
@@ -40,7 +37,6 @@ class ApiController extends Controller
             return $this->fakeAnswerString('You do not have enough chat tokens to prompt '. $model .'. Try again later.');
         }
 
-        $apiKey = env('OPENAI_API_KEY');
         $history = $request->input('history');
 
         $promptMessage = $history[count($history) - 1];
@@ -55,65 +51,70 @@ class ApiController extends Controller
 
         user()->registerChatWithModel($model);
 
-        $client = new Client([
-            'base_uri' => 'https://api.openai.com/v1/',
-            'stream' => true
-        ]);
 
-        $apiResponse = $client->post('https://api.openai.com/v1/chat/completions', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $apiKey,
-                'Content-Type' => 'application/json',
-            ],
-            'json' => [
-                'model' => $model,
-                'messages' => $history,
-                'stream' => true,
-                'temperature' => 0 // Very low temperature to make the model more deterministic
-            ],
-        ]);
+        // Return a StreamedResponse
+        return new StreamedResponse(function () use ($request, $model, $history) {
+            $apiKey = env('OPENAI_API_KEY');
+            $client = new Client([
+                'base_uri' => 'https://api.openai.com/v1/',
+                'stream' => true
+            ]);
 
-        $body = $apiResponse->getBody();
+            $apiResponse = $client->post('https://api.openai.com/v1/chat/completions', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                ],
+                'json' => [
+                    'model' => $model,
+                    'messages' => $history,
+                    'stream' => true,
+                    'temperature' => 0 // Very low temperature to make the model more deterministic
+                ],
+            ]);
 
-        $partialChunk = '';
-        $chunkCount = 0;
+            $body = $apiResponse->getBody();
 
-        // Stream the response through and process chunks
-        while (!$body->eof()) {
-            $chunk = $body->read(1024);
-            $text = $partialChunk . $chunk;
-            $chunks = explode("\n", $text);
+            $partialChunk = '';
+            $chunkCount = 0;
 
-            for ($i = 0; $i < count($chunks) - 1; $i++) {
-                if (trim($chunks[$i]) !== '') {
-                    $chunkCount++;
+            // Stream the response through and process chunks
+            while (!$body->eof()) {
+                $chunk = $body->read(1024);
+                $text = $partialChunk . $chunk;
+                $chunks = explode("\n", $text);
 
-                    if (strpos($chunks[$i], 'data: ') === 0) {
-                        $dataChunk = json_decode(substr($chunks[$i], 6), true);
+                for ($i = 0; $i < count($chunks) - 1; $i++) {
+                    if (trim($chunks[$i]) !== '') {
+                        $chunkCount++;
 
-                        if (isset($dataChunk['choices'][0]['delta']['content'])) {
-                            $content = $dataChunk['choices'][0]['delta']['content'];
+                        if (strpos($chunks[$i], 'data: ') === 0) {
+                            $dataChunk = json_decode(substr($chunks[$i], 6), true);
 
-                            if ($dataChunk['choices'][0]['finish_reason'] == 'stop') {
-                                break;
+                            if (isset($dataChunk['choices'][0]['delta']['content'])) {
+                                $content = $dataChunk['choices'][0]['delta']['content'];
+
+                                if ($dataChunk['choices'][0]['finish_reason'] == 'stop') {
+                                    break;
+                                }
+
+                                echo json_encode([
+                                    'content' => $content,
+                                ]) . "\n\n";
+                                flush(); // Force the response to be sent to the client (to avoid buffering)
                             }
-
-                            echo json_encode([
-                                'content' => $content,
-                            ]) . "\n\n";
-                            flush(); // Force the response to be sent to the client (to avoid buffering)
                         }
                     }
                 }
+
+                // Prepare the partial chunk for the next iteration
+                $partialChunk = $chunks[count($chunks) - 1];
             }
 
-            // Prepare the partial chunk for the next iteration
-            $partialChunk = $chunks[count($chunks) - 1];
-        }
-
-        // Register the chat token usage
-        $settings = app(ChatSettings::class);
-        $settings->used_chat_tokens += $chunkCount;
-        $settings->save();
+            // Register the chat token usage
+            $settings = app(ChatSettings::class);
+            $settings->used_chat_tokens += $chunkCount;
+            $settings->save();
+        });
     }
 }
