@@ -51,6 +51,8 @@ class ApiController extends Controller
 
         user()->registerChatWithModel($model);
 
+        // Flush whatever is in the output buffer
+        @ob_end_flush();
 
         // Return a StreamedResponse
         return new StreamedResponse(function () use ($request, $model, $history) {
@@ -103,8 +105,7 @@ class ApiController extends Controller
                                 ]) . "\n\n";
 
                                 // Force the response to be sent to the client (to avoid buffering)
-                                ob_end_flush();
-                                flush();
+                                @flush();
                             }
                         }
                     }
