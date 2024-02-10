@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Settings\ChatSettings;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ApiController extends Controller
@@ -51,10 +52,9 @@ class ApiController extends Controller
 
         user()->registerChatWithModel($model);
 
-        // Flush whatever is in the output buffer
+        // Flush whatever is in the output buffer so we can immediately send fully formed JSON responses
         @ob_end_flush();
 
-        // Return a StreamedResponse
         return new StreamedResponse(function () use ($request, $model, $history) {
             $apiKey = env('OPENAI_API_KEY');
             $client = new Client([
@@ -62,63 +62,77 @@ class ApiController extends Controller
                 'stream' => true
             ]);
 
-            $apiResponse = $client->post('https://api.openai.com/v1/chat/completions', [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $apiKey,
-                    'Content-Type' => 'application/json',
-                ],
-                'json' => [
-                    'model' => $model,
-                    'messages' => $history,
-                    'stream' => true,
-                    'temperature' => 0 // Very low temperature to make the model more deterministic
-                ],
-            ]);
+            try {
+                $apiResponse = $client->post('https://api.openai.com/v1/chat/completions', [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $apiKey,
+                        'Content-Type' => 'application/json',
+                    ],
+                    'json' => [
+                        'model' => $model,
+                        'messages' => $history,
+                        'stream' => true,
+                        'temperature' => 0 // Very low temperature to make the model more deterministic
+                    ],
+                ]);
 
-            $body = $apiResponse->getBody();
+                $body = $apiResponse->getBody();
 
-            $partialChunk = '';
-            $chunkCount = 0;
+                $partialChunk = '';
+                $chunkCount = 0;
 
-            // Stream the response through and process chunks
-            while (!$body->eof()) {
-                $chunk = $body->read(1024);
-                $text = $partialChunk . $chunk;
-                $chunks = explode("\n", $text);
+                // Stream the response through and process chunks
+                while (!$body->eof()) {
+                    $chunk = $body->read(1024);
+                    $text = $partialChunk . $chunk;
+                    $chunks = explode("\n", $text);
 
-                for ($i = 0; $i < count($chunks) - 1; $i++) {
-                    if (trim($chunks[$i]) !== '') {
-                        $chunkCount++;
+                    for ($i = 0; $i < count($chunks) - 1; $i++) {
+                        if (trim($chunks[$i]) !== '') {
+                            $chunkCount++;
 
-                        if (strpos($chunks[$i], 'data: ') === 0) {
-                            $dataChunk = json_decode(substr($chunks[$i], 6), true);
+                            if (strpos($chunks[$i], 'data: ') === 0) {
+                                $dataChunk = json_decode(substr($chunks[$i], 6), true);
 
-                            if (isset($dataChunk['choices'][0]['delta']['content'])) {
-                                $content = $dataChunk['choices'][0]['delta']['content'];
+                                if (isset($dataChunk['choices'][0]['delta']['content'])) {
+                                    $content = $dataChunk['choices'][0]['delta']['content'];
 
-                                if ($dataChunk['choices'][0]['finish_reason'] == 'stop') {
-                                    break;
+                                    if ($dataChunk['choices'][0]['finish_reason'] == 'stop') {
+                                        break;
+                                    }
+
+                                    echo json_encode([
+                                        'content' => $content,
+                                    ]) . "\n\n";
+
+                                    // Force the response to be sent to the client (to avoid buffering)
+                                    @flush();
                                 }
-
-                                echo json_encode([
-                                    'content' => $content,
-                                ]) . "\n\n";
-
-                                // Force the response to be sent to the client (to avoid buffering)
-                                @flush();
                             }
                         }
                     }
+
+                    // Prepare the partial chunk for the next iteration
+                    $partialChunk = $chunks[count($chunks) - 1];
                 }
 
-                // Prepare the partial chunk for the next iteration
-                $partialChunk = $chunks[count($chunks) - 1];
-            }
+                // Register the chat token usage
+                $settings = app(ChatSettings::class);
+                $settings->used_chat_tokens += $chunkCount;
+                $settings->save();
+            } catch (RequestException $e) {
+                $statusCode = $e->getResponse()->getStatusCode();
 
-            // Register the chat token usage
-            $settings = app(ChatSettings::class);
-            $settings->used_chat_tokens += $chunkCount;
-            $settings->save();
+                if ($statusCode === 400) {
+                    echo json_encode([
+                        'content' => 'Sorry, I couldn\'t get a response from the AI. It seems that the token limit has been reached. Please refresh the page to start a new chat.'
+                    ]) . "\n\n";
+                } else {
+                    echo json_encode([
+                        'content' => 'Sorry, I couldn\'t get a response from the AI. Please try again later or refresh the page to start a new chat. Status code: ' . $statusCode
+                    ]) . "\n\n";
+                }
+            }
         });
     }
 }
