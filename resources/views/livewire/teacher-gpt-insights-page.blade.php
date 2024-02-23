@@ -28,7 +28,6 @@
                 <tr>
                     <th class="p-2 text-left">Gebruikersnaam</th>
                     <th class="p-2 text-left">Token Limieten </th>
-                    <th class="p-2 text-left">Laatste login</th>
                     <th class="p-2 text-left"></th>
                 </tr>
             </thead>
@@ -52,7 +51,6 @@
                                 Nog geen gebruik gemaakt van CurioGPT
                             @endif
                         </td>
-                        <td class="p-2 whitespace-nowrap">{{ $user->last_login_at ? $user->last_login_at->format('d M H:i') : 'Nog niet ingelogd' }}</td>
                         <td class="p-2 whitespace-nowrap">
                             <x-buttons.primary wire:click="resetTokens('{{ $user->id }}')"
                                 x-cloak
