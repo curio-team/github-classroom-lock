@@ -44,6 +44,10 @@ class StudentDashboardPage extends Component
         if ($this->chatPassword !== $settings->chat_password) {
             RateLimiter::hit($this->throttleKey(), 120);
             $this->dispatch('chat-password-incorrect');
+            return;
         }
+
+        // redirect back (so script is correctlly loaded)
+        return redirect()->to(route('dashboard.student'));
     }
 }
