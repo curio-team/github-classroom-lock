@@ -14,9 +14,9 @@ class ApiController extends Controller
     private static function getModelId(string $model)
     {
         return match ($model) {
-            'gpt-4' => 'gpt-4',
-            'gpt-3.5' => 'gpt-3.5-turbo',
-            default => 'gpt-3.5-turbo',
+            'gpt-4' => 'gpt-4-0125-preview',
+            'gpt-3.5' => 'gpt-3.5-turbo-0125',
+            default => 'gpt-3.5-turbo-0125',
         };
     }
 
@@ -53,10 +53,10 @@ class ApiController extends Controller
             return $this->fakeAnswerString('De chat is momenteel uitgeschakeld. Neem contact op met je docent.');
         }
 
-        $model = self::getModelId($request->input('model'));
+        $modelId = $request->input('model');
 
-        if (!user()->canChatWithModel($model)) {
-            return $this->fakeAnswerString('Je hebt niet genoeg chat tokens om '. $model .' te gebruiken. Probeer het later opnieuw.');
+        if (!user()->canChatWithModel($modelId)) {
+            return $this->fakeAnswerString('Je hebt niet genoeg chat tokens om '. $modelId .' te gebruiken. Probeer het later opnieuw.');
         }
 
         $history = $request->input('history');
@@ -67,24 +67,24 @@ class ApiController extends Controller
             $encodedHistory = json_encode($history);
 
             $provider = new EncoderProvider();
-            $encoder = $provider->getForModel($model);
+            $encoder = $provider->getForModel($modelId);
 
             // Nasty hack to get under the token limit. We will lose context, but it's better than nothing
             do {
                 $tokens = count($encoder->encode($encodedHistory));
 
-                if ($tokens > self::getModelTokenLimit($model) && count($history) > 2) {
+                if ($tokens > self::getModelTokenLimit($modelId) && count($history) > 2) {
                     $history = array_slice($history, 1);
                     $encodedHistory = json_encode($history);
                 }
-            } while ($tokens > self::getModelTokenLimit($model) && count($history) > 2);
+            } while ($tokens > self::getModelTokenLimit($modelId) && count($history) > 2);
 
             // If it's still too long, we will just summarize the last message, but trim it to the token limit
-            if ($tokens > self::getModelTokenLimit($model)) {
+            if ($tokens > self::getModelTokenLimit($modelId)) {
                 $encodedHistoryTokens = $encoder->encode($encodedHistory);
 
-                if (count($encodedHistoryTokens) > self::getModelTokenLimit($model)) {
-                    $encodedHistory = $encoder->decode(array_slice($encodedHistoryTokens, 0, self::getModelTokenLimit($model)));
+                if (count($encodedHistoryTokens) > self::getModelTokenLimit($modelId)) {
+                    $encodedHistory = $encoder->decode(array_slice($encodedHistoryTokens, 0, self::getModelTokenLimit($modelId)));
                 }
             }
 
@@ -97,12 +97,13 @@ class ApiController extends Controller
             }
         }
 
-        user()->registerChatWithModel($model);
+        user()->registerChatWithModel($modelId);
 
         // Flush whatever is in the output buffer so we can immediately send fully formed JSON responses
         @ob_end_flush();
 
-        return new StreamedResponse(function () use ($request, $model, $history, $shouldSummarizeHistory) {
+        return new StreamedResponse(function () use ($request, $modelId, $history, $shouldSummarizeHistory) {
+            $model = self::getModelId($modelId);
             $apiKey = env('OPENAI_API_KEY');
             $client = new Client([
                 'base_uri' => 'https://api.openai.com/v1/',
