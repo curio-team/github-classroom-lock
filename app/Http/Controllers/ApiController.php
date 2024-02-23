@@ -11,23 +11,31 @@ use Yethee\Tiktoken\EncoderProvider;
 
 class ApiController extends Controller
 {
-    private static function getModelId(string $model)
+    private static function getModelId(string $modelId)
     {
-        return match ($model) {
-            'gpt-4' => 'gpt-4-0125-preview',
-            'gpt-3.5' => 'gpt-3.5-turbo-0125',
+        return match ($modelId) {
+            'GPT-4' => 'gpt-4-0125-preview',
+            'GPT-3.5' => 'gpt-3.5-turbo-0125',
             default => 'gpt-3.5-turbo-0125',
         };
     }
 
-    private static function getModelTokenLimit(string $model)
+    private static function getModelTokenLimit(string $modelId)
     {
         $summaryLength = strlen(json_encode(static::getSummaryPrompt('')));
 
-        return match ($model) {
-            'gpt-4' => 16000,
+        return match ($modelId) {
+            'GPT-4' => 16000,
             default => 4000
         } - $summaryLength;
+    }
+
+    private static function getTiktokenId(string $modelId)
+    {
+        return match ($modelId) {
+            'GPT-4' => 'gpt-4',
+            default => 'gpt-3.5-turbo'
+        };
     }
 
     private static function getSummaryPrompt(string $encodedHistory)
@@ -56,7 +64,7 @@ class ApiController extends Controller
         $modelId = $request->input('model');
 
         if (!user()->canChatWithModel($modelId)) {
-            return $this->fakeAnswerString('Je hebt niet genoeg chat tokens om '. $modelId .' te gebruiken. Probeer het later opnieuw.');
+            return $this->fakeAnswerString('Je hebt niet genoeg chat tokens over om '. $modelId .' vandaag nog te gebruiken. Gebruik het andere model, of vraag een teamgenoot om de vraag voor je te stellen.');
         }
 
         $history = $request->input('history');
@@ -67,7 +75,7 @@ class ApiController extends Controller
             $encodedHistory = json_encode($history);
 
             $provider = new EncoderProvider();
-            $encoder = $provider->getForModel($modelId);
+            $encoder = $provider->getForModel(self::getTiktokenId($modelId));
 
             // Nasty hack to get under the token limit. We will lose context, but it's better than nothing
             do {
@@ -97,8 +105,6 @@ class ApiController extends Controller
             }
         }
 
-        user()->registerChatWithModel($modelId);
-
         // Flush whatever is in the output buffer so we can immediately send fully formed JSON responses
         @ob_end_flush();
 
@@ -126,8 +132,10 @@ class ApiController extends Controller
 
                 $body = $apiResponse->getBody();
 
+                $promptMessage = $history[count($history) - 1];
+                $fullResponse = '';
                 $partialChunk = '';
-                $chunkCount = 0;
+                $tokenCount = 0;
 
                 // Stream the response through and process chunks
                 while (!$body->eof()) {
@@ -137,7 +145,7 @@ class ApiController extends Controller
 
                     for ($i = 0; $i < count($chunks) - 1; $i++) {
                         if (trim($chunks[$i]) !== '') {
-                            $chunkCount++;
+                            $tokenCount++;
 
                             if (strpos($chunks[$i], 'data: ') === 0) {
                                 $dataChunk = json_decode(substr($chunks[$i], 6), true);
@@ -154,6 +162,8 @@ class ApiController extends Controller
                                         'is_summary' => $shouldSummarizeHistory,
                                     ]) . "\n\n";
 
+                                    $fullResponse .= $content;
+
                                     // Force the response to be sent to the client (to avoid buffering)
                                     @flush();
                                 }
@@ -165,10 +175,7 @@ class ApiController extends Controller
                     $partialChunk = $chunks[count($chunks) - 1];
                 }
 
-                // Register the chat token usage
-                $settings = app(ChatSettings::class);
-                $settings->used_chat_tokens += $chunkCount;
-                $settings->save();
+                user()->registerChatWithModel($modelId, $tokenCount, $promptMessage['content'], $fullResponse);
             } catch (RequestException $e) {
                 $statusCode = $e->getResponse()->getStatusCode();
 

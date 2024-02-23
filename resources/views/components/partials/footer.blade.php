@@ -1,3 +1,3 @@
-        @livewireScripts
+        @livewireScriptConfig
     </body>
 </html>

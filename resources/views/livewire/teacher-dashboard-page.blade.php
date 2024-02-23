@@ -6,11 +6,7 @@
             <strong>enige toegestane manier om een Large Language Model (LLM) te gebruiken.</strong>
         </p>
 
-        <p>CurioGPT wordt geleverd aan studenten zonder enige garanties. Het is mogelijk dat het niet altijd beschikbaar is. Als het niet beschikbaar is, mogen de studenten GEEN andere LLM gebruiken.</p>
-
-        <x-progress-bar :max="$chatTokensMax" :value="$chatTokensUsed">
-            Gebruikte Tokens
-        </x-progress-bar>
+        <p>CurioGPT wordt geleverd aan studenten zonder enige garanties. Het is mogelijk dat het niet altijd beschikbaar is. Als het niet beschikbaar is, mogen de studenten <strong>geen</strong> andere LLM gebruiken.</p>
 
         @if ($isChatActive)
             <x-buttons.danger wire:click="lockChat">Vergrendel Chat</x-buttons.danger>
@@ -26,7 +22,7 @@
     <x-content.section>
         <x-headings.page>GitHub Classroom Teams Vergrendelen</x-headings.page>
 
-        <p>Met deze tool kun je GitHub Classroom-teams vergrendelen om te voorkomen dat studenten wijzigingen aanbrengen in hun repositories nadat ze de examenruimte hebben verlaten.</p>
+        <p>Met de onderstaande tool kun je GitHub Classroom-teams vergrendelen om te voorkomen dat studenten wijzigingen aanbrengen in hun repositories nadat ze de examenruimte hebben verlaten.</p>
 
         <x-content.hint>
             <p>Het werkt door studenten als leden van hun team te verwijderen, maar houdt hun lidmaatschap bij. Op deze manier kun je later beslissen om ze weer toe te voegen.</p>
@@ -38,14 +34,14 @@
         <x-content.stack-layout>
             <x-headings.section>GitHub Teams Snapshot</x-headings.section>
             <div class="flex flex-row gap-2">
-                <input type="checkbox" wire:model="showArchived" class="rounded border-gray-800 border-2 w-6 h-6" id="showArchived" />
+                <input type="checkbox" wire:model.live="showArchived" class="rounded border-gray-800 border-2 w-6 h-6" id="showArchived" />
                 <label for="showArchived">Toon gearchiveerde teams</label>
             </div>
 
             @forelse ($teams as $team)
                 <x-content.stack-layout class="border-2 border-gray-800 p-4 rounded">
                     <div class="flex flex-row justify-between">
-                        {{-- <x-input.checkbox wire:model="teamIds" :value="$team->id" /> --}}
+                        {{-- <x-input.checkbox wire:model.live="teamIds" :value="$team->id" /> --}}
                         <h4>{{ $team->name }}</h4>
                         <x-content.status-indicator :active="!$team->locked">
                             {{ $team->locked ? 'Locked' : 'Unlocked' }}
@@ -92,8 +88,8 @@
                 </x-content.hint>
             @endforelse
 
-            <x-content.stack-layout row wrap tight>
-                <x-buttons.primary wire:click="makeTeamSnapshot">Update Snapshot</x-buttons.primary>
+            <x-content.stack-layout row wrap tight class="justify-between">
+                <x-buttons.primary wire:click="makeTeamSnapshot">Ontdek nieuwe teams op GitHub (Update Snapshot)</x-buttons.primary>
                 @if ($teamsLocked)
                     <x-buttons.primary wire:click="unlockAllTeams">Ontgrendel Alle Teams</x-buttons.primary>
                 @else

@@ -1,20 +1,14 @@
 @props([
     'max' => 100,
     'value' => 0,
-    'color' => 'bg-emerald-400'
+    'color' => 'bg-emerald-400',
+    'hideMaxLabel' => false
 ])
 <div {{
     $attributes->merge([
-        'class' => 'flex flex-col gap-2 rounded border-slate-400 border'
+        'class' => 'flex flex-row gap-2 items-center rounded self-stretch',
     ])
 }}>
-    <div class="flex flex-col gap-2 p-4">
-        <div class="flex flex-row justify-between">
-            <span class="uppercase font-semibold">{{ $slot }}</span>
-            <span class="text-slate-300">{{ $value }} / {{ $max }}</span>
-        </div>
-        <div class="h-4 bg-slate-200 rounded">
-            <div class="{{ $color }} h-full rounded @if ($max - $value < 1000) animate-pulse @endif" style="width: {{ $value / $max * 100 }}%"></div>
-        </div>
-    </div>
+    <progress class="flex-1 h-2 border border-slate-400 bg-slate-200 rounded" max="{{ $max }}" value="{{ $value }}"></progress>
+    <div class="text-xs"><span class="progress-value-approximation hidden">±</span><span class="progress-value">{{ number_format($value) }}</span> @unless($hideMaxLabel) / {{ number_format($max) }} @endunless{{ $slot }}</div>
 </div>

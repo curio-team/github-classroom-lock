@@ -42,6 +42,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'chat_limits_reset' => 'datetime',
         'chats_remaining' => 'array',
     ];
 
@@ -55,17 +56,15 @@ class User extends Authenticatable
      */
     public function getChatLimits(): array
     {
-        $chatsRemaining = $this->chats_remaining;
-        $chatLimitsReset = $this->chat_limits_reset;
-
-        if (!$chatLimitsReset || now()->gt($chatLimitsReset)) {
-            $chatsRemaining = ChatSettings::getChatPerHour();
-            $this->chats_remaining = $chatsRemaining;
-            $this->chat_limits_reset = now()->addHour();
+        if ($this->chat_limits_reset === null || $this->chat_limits_reset->isPast()) {
+            $this->chats_remaining = ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay();
+            $this->chat_limits_reset = now()->endOfDay();
             $this->save();
         }
 
-        return $chatsRemaining;
+        $remainingChats = $this->chats_remaining ?? ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay();
+        ksort($remainingChats);
+        return $remainingChats;
     }
 
     /**
@@ -85,16 +84,32 @@ class User extends Authenticatable
     /**
      * Uses a chat token for the given model.
      */
-    public function registerChatWithModel(string $model): void
+    public function registerChatWithModel(string $model, int $tokenCount, string $prompt, string $response): void
     {
         $chatsRemaining = $this->getChatLimits();
+
+        $this->chatLogs()->save(new ChatLog([
+            'model_id' => $model,
+            'prompt' => $prompt,
+            'response' => $response,
+        ]));
 
         if ($chatsRemaining[$model] === -1) {
             return;
         }
 
-        $chatsRemaining[$model]--;
+        $chatsRemaining[$model] -= $tokenCount;
         $this->chats_remaining = $chatsRemaining;
         $this->save();
+    }
+
+    /**
+     *
+     * Relationships
+     *
+     */
+    public function chatLogs()
+    {
+        return $this->hasMany(ChatLog::class);
     }
 }

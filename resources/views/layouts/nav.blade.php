@@ -26,17 +26,21 @@
             <!-- Left Side Of Navbar -->
             <x-content.stack-layout row class="md:grow">
                 @auth
-                <x-buttons.link
-                    href="{{ route('dashboard.student') }}">
-                    CurioGPT
-                </x-buttons.link>
-
-                @if (user()->isTeacher())
                     <x-buttons.link
-                        href="{{ route('dashboard.teacher') }}">
-                        Docent Dashboard
+                        href="{{ route('dashboard.student') }}">
+                        CurioGPT
                     </x-buttons.link>
-                @endif
+
+                    @if (user()->isTeacher())
+                        <x-buttons.link
+                            href="{{ route('dashboard.teacher') }}">
+                            🔒 Dashboard
+                        </x-buttons.link>
+                        <x-buttons.link
+                            href="{{ route('dashboard.teacher-gpt') }}">
+                            🔒 Overzicht CurioGPT
+                        </x-buttons.link>
+                    @endif
                 @endauth
             </x-content.stack-layout>
 

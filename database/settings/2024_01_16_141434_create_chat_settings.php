@@ -1,5 +1,6 @@
 <?php
 
+use App\Settings\ChatSettings;
 use Spatie\LaravelSettings\Migrations\SettingsMigration;
 
 return new class extends SettingsMigration
@@ -7,7 +8,6 @@ return new class extends SettingsMigration
     public function up(): void
     {
         $this->migrator->add('chat.chat_active', true);
-        $this->migrator->add('chat.max_chat_tokens', 37284480);
-        $this->migrator->add('chat.used_chat_tokens', 0);
+        $this->migrator->add('chat.max_user_chat_tokens_per_model_per_day', ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay());
     }
 };

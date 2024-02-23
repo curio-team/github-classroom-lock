@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Livewire;
+namespace App\Livewire;
 
 use App\Settings\ChatSettings;
 use Github\AuthMethod;
@@ -15,16 +15,19 @@ class TeacherDashboardPage extends Component
 
     public function render(ChatSettings $settings)
     {
-        $teams = $this->showArchived ? \App\Models\Team::withArchived()->with('members')->get() : \App\Models\Team::with('members')->get();
+        $teams = $this->showArchived
+            ? \App\Models\Team::withArchived()
+                ->with('members')
+                ->get()
+            : \App\Models\Team::with('members')
+                ->get();
         $teamsLocked = $teams->every(function ($team) {
             return $team->locked;
         });
 
         $isChatActive = $settings->chat_active;
-        $chatTokensMax = $settings->max_chat_tokens;
-        $chatTokensUsed = $settings->used_chat_tokens;
 
-        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive', 'chatTokensMax', 'chatTokensUsed'));
+        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
     }
 
     private function getApiClientAndPaginator()
@@ -191,7 +194,11 @@ class TeacherDashboardPage extends Component
 
         $team->members()->saveMany($members);
 
-        $team->locked = $team->members->count() !== count($membersData);
+        if ($team->members->count() === 0) {
+            $team->locked = true;
+        } else {
+            $team->locked = $team->members->count() !== count($membersData);
+        }
         $team->save();
     }
 
