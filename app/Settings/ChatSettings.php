@@ -12,6 +12,11 @@ class ChatSettings extends Settings
     public bool $chat_active;
 
     /**
+     * Which password to lock the chat behind.
+     */
+    public ?string $chat_password;
+
+    /**
      * The maximum available chat tokens in the system, per user/per day for specific models.
      */
     public array $max_user_chat_tokens_per_model_per_day;

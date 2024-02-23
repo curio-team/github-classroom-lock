@@ -1,7 +1,7 @@
-@props(['isChatActive' => false])
+@props(['chatMode' => 'inactive'])
 
 <div class="flex flex-col gap-2">
-    @if ($isChatActive)
+    @if ($chatMode === 'active')
         <x-notice type="warning">
             CurioGPT wordt geleverd zonder garanties. Het is mogelijk dat het niet altijd beschikbaar is. Gebruik van andere taalmodellen (zoals ChatGPT, Gemini, enz.) is niet toegestaan.
         </x-notice>

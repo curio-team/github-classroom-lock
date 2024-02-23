@@ -119,7 +119,6 @@
         </div>
     </div>
 
-    {{-- AlpineJS modal for x-on:user-tokens-reset --}}
     <div x-data="{ open: false, userName: '' }" x-on:user-tokens-reset.window="open = true; userName = $event.detail.userName">
         <div x-show="open" class="fixed inset-0 bg-gray-800 bg-opacity-90 grid place-items-center justify-center text-white">
             <div class="flex flex-col items-center gap-2 rounded bg-gray-800 p-8 shadow">

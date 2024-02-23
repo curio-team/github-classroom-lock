@@ -13,6 +13,13 @@ class TeacherDashboardPage extends Component
 {
     public $showArchived = false;
 
+    public $chatPassword;
+
+    public function mount(ChatSettings $settings)
+    {
+        $this->chatPassword = $settings->chat_password;
+    }
+
     public function render(ChatSettings $settings)
     {
         $teams = $this->showArchived
@@ -28,6 +35,12 @@ class TeacherDashboardPage extends Component
         $isChatActive = $settings->chat_active;
 
         return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
+    }
+
+    public function updateChatPassword(ChatSettings $settings)
+    {
+        $settings->chat_password = $this->chatPassword;
+        $settings->save();
     }
 
     private function getApiClientAndPaginator()
