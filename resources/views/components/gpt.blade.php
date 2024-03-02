@@ -122,23 +122,55 @@
                 class="message-container group flex flex-col mb-2 hidden">
                 <p class="author text-xs text-slate-400 mb-1"></p>
                 <div class="message flex flex-row mb-2">
-                    <div class="relative message-content flex flex-col rounded p-4 text-black">
-                        <x-buttons.secondary class="absolute opacity-50 top-0 right-0 -mt-2 -mr-2 hidden group-hover:block"
-                                            tight
-                                            title="Copy message"
-                                            aria-label="Copy message"
-                                            @click="$tooltip('Copied to clipboard!')"
-                                            x-clipboard="$el.parentElement.querySelector('.chat-message-text').innerText">
-                            <x-slot name="icon">
-                                <x-icons.copy />
-                            </x-slot>
-                        </x-buttons.secondary>
-                        <p class="chat-message-text"></p>
+                    <div class="relative message-content flex flex-col rounded p-4 text-black"
+                        x-data="{ isEditting: false }">
+                        <div class="absolute opacity-50 top-0 right-0 -mt-2 -mr-2 hidden group-hover:flex gap-1 flex-row">
+                            <x-buttons.secondary tight
+                                                title="Kopieer bericht"
+                                                aria-label="Kopieer bericht"
+                                                @click="$tooltip('Bericht gekopieerd naar klembord!')"
+                                                x-clipboard="$refs.chatMessageText.innerText">
+                                <x-slot name="icon">
+                                    <x-icons.copy />
+                                </x-slot>
+                            </x-buttons.secondary>
+                            <x-buttons.secondary tight
+                                                title="Bewerk bericht"
+                                                aria-label="Bewerk bericht"
+                                                x-show="!isEditting"
+                                                @click="isEditting = !isEditting">
+                                <x-slot name="icon">
+                                    <x-icons.edit />
+                                </x-slot>
+                            </x-buttons.secondary>
+                            <x-buttons.secondary tight
+                                                title="Annuleer bewerken"
+                                                aria-label="Annuleer bewerken"
+                                                x-show="isEditting"
+                                                @click="isEditting = !isEditting">
+                                <x-slot name="icon">
+                                    <x-icons.close />
+                                </x-slot>
+                            </x-buttons.secondary>
+                        </div>
+                        <p class="chat-message-text"
+                            x-bind:contenteditable="isEditting"
+                            x-effect="isEditting ? $refs.chatMessageText.focus() : null"
+                            x-ref="chatMessageText"></p>
+                        <x-buttons.primary tight
+                                        title="Verstuur bewerking"
+                                        aria-label="Verstuur bewerking"
+                                        x-show="isEditting"
+                                        class="mt-2 self-end"
+                                        @click="isEditting = !isEditting; updateChatMessageFromElement($root.closest('.message-container').id)">
+                            Opslaan
+                        </x-buttons.primary>
                     </div>
                 </div>
             </div>
 
             <script>
+                const MESSAGE_ID_PREFIX = 'history-chat-message-';
                 const formEl = document.getElementById('ai-form');
                 const promptEl = document.getElementById('prompt');
                 const chatHistory = document.getElementById('chat-history');
@@ -154,6 +186,11 @@
                 function setFormDisabled(disabled) {
                     submitButtonEl._x_dataStack[0].disabled = disabled;
                     isChatDisabled = disabled;
+
+                    if (!disabled) {
+                        isChatCancelled = false;
+                        promptEl.focus();
+                    }
                 }
 
                 function sizePromptEl() {
@@ -165,7 +202,6 @@
                 // It returns the message element so further modifications can be made
                 function addMessage(message, role) {
                     const messageContainerEl = template.cloneNode(true);
-                    messageContainerEl.id = ''; // Remove the id to avoid duplicates
                     messageContainerEl.classList.remove('hidden');
 
                     const authorEl = messageContainerEl.querySelector('.author');
@@ -198,7 +234,16 @@
                         content: message,
                     });
 
+                    messageContainerEl.id = MESSAGE_ID_PREFIX + historyLength;
+
                     return { messageTextEl, historyLength };
+                }
+
+                function updateChatMessageFromElement(id) {
+                    const messageContainerEl = document.getElementById(id);
+                    const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
+                    const historyIndex = id.replace(MESSAGE_ID_PREFIX, '') - 1;
+                    history[historyIndex].content = messageTextEl.innerText;
                 }
 
                 function chatScrollToBottom() {
@@ -304,8 +349,6 @@
                             });
                         }
 
-                        isChatCancelled = false;
-
                         if (onReceivedFull) {
                             onReceivedFull(currentMessage, canBeSummarized);
                         }
@@ -404,6 +447,13 @@
                     }
 
                     if (event.key === 'Backspace') {
+                        // Cheat to quickly enter test data into prompt
+                        if (event.altKey && event.ctrlKey) {
+                            promptEl.value = 'Give a short one sentence story that is witty and humorous';
+                            submitPrompt();
+                            return;
+                        }
+
                         sizePromptEl();
                         return;
                     }
