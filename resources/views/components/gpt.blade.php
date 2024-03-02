@@ -157,14 +157,22 @@
                             x-bind:contenteditable="isEditting"
                             x-effect="isEditting ? $refs.chatMessageText.focus() : null"
                             x-ref="chatMessageText"></p>
-                        <x-buttons.primary tight
-                                        title="Verstuur bewerking"
-                                        aria-label="Verstuur bewerking"
-                                        x-show="isEditting"
-                                        class="mt-2 self-end"
-                                        @click="isEditting = !isEditting; updateChatMessageFromElement($root.closest('.message-container').id)">
-                            Opslaan
-                        </x-buttons.primary>
+                            <div class="flex justify-between gap-2 mt-2">
+                                <x-buttons.danger tight
+                                    title="Verwijder bericht"
+                                    aria-label="Verwijder bericht"
+                                    x-show="isEditting"
+                                    @click="isEditting = !isEditting; removeChatMessageFromElement($root.closest('.message-container').id)">
+                                    Verwijderen
+                                </x-buttons.danger>
+                                <x-buttons.primary tight
+                                    title="Verstuur bewerking"
+                                    aria-label="Verstuur bewerking"
+                                    x-show="isEditting"
+                                    @click="isEditting = !isEditting; updateChatMessageFromElement($root.closest('.message-container').id)">
+                                    Opslaan
+                                </x-buttons.primary>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -239,11 +247,24 @@
                     return { messageTextEl, historyLength };
                 }
 
-                function updateChatMessageFromElement(id) {
+                function getElementWithHistoryIndexFromId(id) {
                     const messageContainerEl = document.getElementById(id);
-                    const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
                     const historyIndex = id.replace(MESSAGE_ID_PREFIX, '') - 1;
+
+                    return { messageContainerEl, historyIndex };
+                }
+
+                function updateChatMessageFromElement(id) {
+                    const { messageContainerEl, historyIndex } = getElementWithHistoryIndexFromId(id);
+                    const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
                     history[historyIndex].content = messageTextEl.innerText;
+                }
+
+                function removeChatMessageFromElement(id) {
+                    const { messageContainerEl, historyIndex } = getElementWithHistoryIndexFromId(id);
+                    // Leave null so the indexes stay the same
+                    history[historyIndex] = null;
+                    messageContainerEl.remove();
                 }
 
                 function chatScrollToBottom() {
@@ -293,6 +314,8 @@
                     const model = document.querySelector('input[name="model"]:checked').value;
                     const aiRequestRoute = '{{ route('ai-request') }}';
                     const csrfToken = csrfEl.getAttribute('content');
+                    let filteredHistory = history.slice(0, -1); // Remove the last message, which is the '...' loading message;
+                    filteredHistory = filteredHistory.filter(message => message !== null);
 
                     fetch(aiRequestRoute, {
                         method: 'POST',
@@ -302,7 +325,7 @@
                         },
                         body: JSON.stringify({
                             model: model,
-                            history: history.slice(0, -1), // Remove the last message, which is the '...' loading message
+                            history: filteredHistory,
                             should_summarize_history: summarizeMode,
                         }),
                     })
