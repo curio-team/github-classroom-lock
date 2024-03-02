@@ -88,26 +88,30 @@
                                 class="flex-grow border-transparent rounded-bl p-4 bg-slate-200 text-black"></textarea>
 
                         <button type="submit"
-                                class="flex-shrink-0 bg-emerald-200 border-emerald-600 text-black p-4 rounded-br disabled:opacity-50 disabled:cursor-not-allowed">
+                                x-data="{ disabled: false }"
+                                class="flex-shrink-0 bg-emerald-200 border-emerald-600 text-black p-4 rounded-br disabled:opacity-50">
                             <svg xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke-width="2"
                                 stroke="currentColor"
-                                class="w-4 h-4 text-gray-600 group-disabled:hidden">
+                                :class="{ 'hidden': disabled }"
+                                class="w-4 h-4 text-gray-600">
                                 <path stroke-linecap="round"
                                     stroke-linejoin="round"
                                     d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                             </svg>
+
                             <svg xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                                stroke="currentColor"
-                                class="w-4 h-4 hidden group-disabled:block animate-spin">
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    :class="{ 'hidden': !disabled }"
+                                    class="w-4 h-4 text-gray-600">
                                 <path stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                        stroke-linejoin="round"
+                                        d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
                             </svg>
                         </button>
                     </fieldset>
@@ -141,15 +145,15 @@
                 const csrfEl = document.querySelector('meta[name="csrf-token"]');
                 const submitButtonEl = formEl.querySelector('fieldset button');
                 const template = document.getElementById('message-template');
+
+                let isChatCancelled = false;
+                let isChatDisabled = false;
                 let lastScrollByUser = 0;
                 const history = [];
 
                 function setFormDisabled(disabled) {
-                    if (disabled) {
-                        submitButtonEl.setAttribute('disabled', 'disabled');
-                    } else {
-                        submitButtonEl.removeAttribute('disabled');
-                    }
+                    submitButtonEl._x_dataStack[0].disabled = disabled;
+                    isChatDisabled = disabled;
                 }
 
                 function sizePromptEl() {
@@ -266,7 +270,15 @@
 
                         while (true) {
                             const { done, value } = await reader.read();
-                            if (done) break;
+
+                            if (done) {
+                                break;
+                            }
+
+                            if (isChatCancelled) {
+                                setFormDisabled(false);
+                                return;
+                            }
 
                             // Parse the JSON output from PHP, splitting it by the separator
                             const chunks = value.split('\n\n');
@@ -292,6 +304,8 @@
                             });
                         }
 
+                        isChatCancelled = false;
+
                         if (onReceivedFull) {
                             onReceivedFull(currentMessage, canBeSummarized);
                         }
@@ -304,6 +318,11 @@
                 }
 
                 function submitPrompt() {
+                    if (isChatDisabled) {
+                        isChatCancelled = true;
+                        return;
+                    }
+
                     let prompt = promptEl.value;
 
                     if (prompt.trim() === '') {
