@@ -258,6 +258,20 @@
                     const { messageContainerEl, historyIndex } = getElementWithHistoryIndexFromId(id);
                     const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
                     history[historyIndex].content = messageTextEl.innerText;
+
+                    const resend = confirm('Wil je dit bericht opnieuw versturen?\nAlle berichten die erop volgde worden verwijderd.');
+
+                    if (resend) {
+                        promptEl.value = messageTextEl.innerText;
+
+                        history.splice(historyIndex, history.length - historyIndex);
+
+                        for (let i = chatHistory.children.length - 1; i >= historyIndex; i--) {
+                            chatHistory.children[i].remove();
+                        }
+
+                        submitPrompt();
+                    }
                 }
 
                 function removeChatMessageFromElement(id) {
