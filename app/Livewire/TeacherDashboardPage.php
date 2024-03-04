@@ -148,7 +148,10 @@ class TeacherDashboardPage extends Component
         $organization = config('app.github_organization');
 
         /** @var \App\Models\Team $team */
-        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()
+            ->with('members')
+            ->where('id', $teamId)
+            ->first();
 
         foreach ($team->members as $member) {
             $client->teams()->removeMember($team->slug, $member->login, $organization);
@@ -167,7 +170,10 @@ class TeacherDashboardPage extends Component
         $organization = config('app.github_organization');
 
         /** @var \App\Models\Team $team */
-        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()
+            ->with('members')
+            ->where('id', $teamId)
+            ->first();
 
         foreach ($team->members as $member) {
             $client->teams()->addMember($team->slug, $member->login, $organization);
@@ -186,7 +192,10 @@ class TeacherDashboardPage extends Component
         $organization = config('app.github_organization');
 
         /** @var \App\Models\Team $team */
-        $team = \App\Models\Team::with('members')->where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()
+            ->with('members')
+            ->where('id', $teamId)
+            ->first();
 
         $membersData = $paginator->fetchAll($client->teams(), 'members', [$team->slug, $organization]);
 
@@ -247,7 +256,10 @@ class TeacherDashboardPage extends Component
         }
 
         /** @var \App\Models\Team $team */
-        $team = \App\Models\Team::where('id', $teamId)->first();
+        $team = \App\Models\Team::withArchived()
+            ->where('id', $teamId)
+            ->first();
+
         $team->delete();
     }
 
