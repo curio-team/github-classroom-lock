@@ -3,7 +3,7 @@
 <div id="app" class="text-black">
     @include('layouts.nav')
 
-    <main class="max-w-prose mx-auto py-4">
+    <main class="max-w-4xl mx-auto py-4">
         {{ $slot }}
     </main>
 </div>

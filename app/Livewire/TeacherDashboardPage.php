@@ -1,24 +1,46 @@
 <?php
 
-namespace App\Http\Livewire;
+namespace App\Livewire;
 
+use App\Settings\ChatSettings;
 use Github\AuthMethod;
 use Github\Client;
 use Github\ResultPager;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 
-class DashboardPage extends Component
+class TeacherDashboardPage extends Component
 {
     public $showArchived = false;
 
-    public function render()
+    public $chatPassword;
+
+    public function mount(ChatSettings $settings)
     {
-        $teams = $this->showArchived ? \App\Models\Team::withArchived()->with('members')->get() : \App\Models\Team::with('members')->get();
+        $this->chatPassword = $settings->chat_password;
+    }
+
+    public function render(ChatSettings $settings)
+    {
+        $teams = $this->showArchived
+            ? \App\Models\Team::withArchived()
+                ->with('members')
+                ->get()
+            : \App\Models\Team::with('members')
+                ->get();
         $teamsLocked = $teams->every(function ($team) {
             return $team->locked;
         });
-        return view('livewire.dashboard-page', compact('teams', 'teamsLocked'));
+
+        $isChatActive = $settings->chat_active;
+
+        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
+    }
+
+    public function updateChatPassword(ChatSettings $settings)
+    {
+        $settings->chat_password = $this->chatPassword;
+        $settings->save();
     }
 
     private function getApiClientAndPaginator()
@@ -81,8 +103,11 @@ class DashboardPage extends Component
         [$client] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
 
-        $teams = \App\Models\Team::with('members')->where('locked', false)->get();
+        $teams = \App\Models\Team::with('members')
+            ->where('locked', false)
+            ->get();
 
+        /** @var \App\Models\Team $team */
         foreach ($teams as $team) {
             foreach ($team->members as $member) {
                 $client->teams()->removeMember($team->slug, $member->login, $organization);
@@ -103,6 +128,7 @@ class DashboardPage extends Component
 
         $teams = \App\Models\Team::with('members')->where('locked', true)->get();
 
+        /** @var \App\Models\Team $team */
         foreach ($teams as $team) {
             foreach ($team->members as $member) {
                 $client->teams()->addMember($team->slug, $member->login, $organization);
@@ -121,7 +147,11 @@ class DashboardPage extends Component
         [$client] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
 
-        $team = \App\Models\Team::withArchived()->with('members')->where('id', $teamId)->first();
+        /** @var \App\Models\Team $team */
+        $team = \App\Models\Team::withArchived()
+            ->with('members')
+            ->where('id', $teamId)
+            ->first();
 
         foreach ($team->members as $member) {
             $client->teams()->removeMember($team->slug, $member->login, $organization);
@@ -130,7 +160,7 @@ class DashboardPage extends Component
         $team->locked = true;
         $team->save();
     }
-    
+
     /**
      * Unlocks a team by adding their members on GitHub.
      */
@@ -139,7 +169,11 @@ class DashboardPage extends Component
         [$client] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
 
-        $team = \App\Models\Team::withArchived()->with('members')->where('id', $teamId)->first();
+        /** @var \App\Models\Team $team */
+        $team = \App\Models\Team::withArchived()
+            ->with('members')
+            ->where('id', $teamId)
+            ->first();
 
         foreach ($team->members as $member) {
             $client->teams()->addMember($team->slug, $member->login, $organization);
@@ -157,7 +191,11 @@ class DashboardPage extends Component
         [$client, $paginator] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
 
-        $team = \App\Models\Team::withArchived()->with('members')->where('id', $teamId)->first();
+        /** @var \App\Models\Team $team */
+        $team = \App\Models\Team::withArchived()
+            ->with('members')
+            ->where('id', $teamId)
+            ->first();
 
         $membersData = $paginator->fetchAll($client->teams(), 'members', [$team->slug, $organization]);
 
@@ -178,7 +216,11 @@ class DashboardPage extends Component
 
         $team->members()->saveMany($members);
 
-        $team->locked = $team->members->count() !== count($membersData);
+        if ($team->members->count() === 0) {
+            $team->locked = true;
+        } else {
+            $team->locked = $team->members->count() !== count($membersData);
+        }
         $team->save();
     }
 
@@ -187,6 +229,7 @@ class DashboardPage extends Component
      */
     public function archiveTeam($teamId)
     {
+        /** @var \App\Models\Team $team */
         $team = \App\Models\Team::where('id', $teamId)->first();
         $team->is_archived = true;
         $team->save();
@@ -197,6 +240,7 @@ class DashboardPage extends Component
      */
     public function unarchiveTeam($teamId)
     {
+        /** @var \App\Models\Team $team */
         $team = \App\Models\Team::withArchived()->where('id', $teamId)->first();
         $team->is_archived = false;
         $team->save();
@@ -208,10 +252,32 @@ class DashboardPage extends Component
     public function deleteTeam($teamId)
     {
         if (\App\Models\TeamMember::where('team_id', $teamId)->count() > 0) {
-            return redirect()->route('dashboard')->with('error', 'Team has members, cannot delete.');
+            return redirect()->route('dashboard.teacher')->with('error', 'Team has members, cannot delete.');
         }
 
-        $team = \App\Models\Team::withArchived()->where('id', $teamId)->first();
+        /** @var \App\Models\Team $team */
+        $team = \App\Models\Team::withArchived()
+            ->where('id', $teamId)
+            ->first();
+
         $team->delete();
+    }
+
+    /**
+     * Lock the GPT chat.
+     */
+    public function lockChat(ChatSettings $settings)
+    {
+        $settings->chat_active = false;
+        $settings->save();
+    }
+
+    /**
+     * Unlock the GPT chat.
+     */
+    public function unlockChat(ChatSettings $settings)
+    {
+        $settings->chat_active = true;
+        $settings->save();
     }
 }

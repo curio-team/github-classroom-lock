@@ -1,6 +1,7 @@
 @props([
     'big',
-    'submit'
+    'tight',
+    'submit',
 ])
 @php
     $newOnClick = isset($onclick) ? $onclick : '';
@@ -42,8 +43,10 @@
     'href' => (isset($submit) || isset($modal) || isset($attributes['aria-disabled']) || isset($attributes['wire:click']) || isset($attributes['wire:click.stop']) || isset($attributes['wire:click.prevent']) || isset($attributes['onclick']) || isset($attributes['@click'])) ? 'javascript:void(0)' : '#',
     'onclick' => $newOnClick,
 ])->class([
-        'flex items-center justify-center px-4 py-2 gap-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest ring-gray-300 transition ease-in-out duration-150 aria-disabled:cursor-not-allowed aria-disabled:opacity-25',
+        'flex items-center justify-center gap-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest ring-gray-300 transition ease-in-out duration-150 aria-disabled:cursor-not-allowed aria-disabled:opacity-25',
+        'px-4 py-2' => !isset($big) && !isset($tight),
         'px-8 py-4' => isset($big),
+        'p-2' => isset($tight),
         'hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring focus:ring-offset-2' => !isset($attributes['aria-disabled']),
         'flex-shrink-0'
     ]) }}>

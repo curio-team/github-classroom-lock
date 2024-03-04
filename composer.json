@@ -5,15 +5,17 @@
     "keywords": ["curio", "github", "classroom", "lock"],
     "license": "MIT",
     "require": {
-        "php": "^8.0.2",
+        "php": ">8.0 <8.2",
         "guzzlehttp/guzzle": "^7.2",
         "knplabs/github-api": "^3.9",
-        "laravel/framework": "^9.2",
-        "laravel/sanctum": "^2.14.1",
+        "laravel/framework": "^10.0",
+        "laravel/sanctum": "^3.2",
         "laravel/tinker": "^2.7",
         "lcobucci/jwt": "4.0.4",
-        "livewire/livewire": "^2.11",
-        "studiokaa/amoclient": "^3.0"
+        "livewire/livewire": "^3.0",
+        "spatie/laravel-settings": "^3.2",
+        "studiokaa/amoclient": "^3.3.0",
+        "yethee/tiktoken": "^0.3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
@@ -21,7 +23,7 @@
         "mockery/mockery": "^1.4.4",
         "nunomaduro/collision": "^6.1",
         "phpunit/phpunit": "^9.5.10",
-        "spatie/laravel-ignition": "^1.0"
+        "spatie/laravel-ignition": "^2.0"
     },
     "autoload": {
         "psr-4": {
@@ -33,7 +35,10 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
-        }
+        },
+        "files": [
+            "app/helpers.php"
+        ]
     },
     "scripts": {
         "post-autoload-dump": [
@@ -64,6 +69,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

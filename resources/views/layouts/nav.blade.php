@@ -1,7 +1,7 @@
 <nav x-data="{ openSidebar: false }" class="bg-white shadow-sm py-4 px-8">
-    <x-content.stack-layout row class="items-center justify-between max-w-prose mx-auto">
+    <x-content.stack-layout row class="items-center justify-between max-w-4xl mx-auto">
         <a class="max-w-[100px] grow"
-           href="{{ url('/') }}">
+           href="{{ route('dashboard') }}">
             <x-logos.light-logo />
         </a>
 
@@ -26,20 +26,28 @@
             <!-- Left Side Of Navbar -->
             <x-content.stack-layout row class="md:grow">
                 @auth
-                @can('view-any', App\Models\Site::class)
-                    <a href="{{ route('sites.index') }}">@lang('crud.studenten_info_sites.manage')</a>
-                @endcan
+                    <x-buttons.link
+                        href="{{ route('dashboard.student') }}">
+                        CurioGPT
+                    </x-buttons.link>
+
+                    @if (user()->isTeacher())
+                        <x-buttons.link
+                            href="{{ route('dashboard.teacher') }}">
+                            🔒 Dashboard
+                        </x-buttons.link>
+                        <x-buttons.link
+                            href="{{ route('dashboard.teacher-gpt') }}">
+                            🔒 Overzicht CurioGPT
+                        </x-buttons.link>
+                    @endif
                 @endauth
             </x-content.stack-layout>
 
             <!-- Right Side Of Navbar -->
             <x-content.stack-layout row class="items-center">
-                <!-- Authentication Links -->
                 @guest
-                    <x-buttons.link href="{{ route('login') }}">{{ __('Login') }}</x-buttons.link>
-                    @if (Route::has('register'))
-                        <x-buttons.link href="{{ route('register') }}">{{ __('Register') }}</x-buttons.link>
-                    @endif
+                    <x-buttons.link href="{{ route('login') }}">{{ __('Inloggen') }}</x-buttons.link>
                 @else
                     <x-buttons.link
                         target="_blank"
@@ -51,7 +59,7 @@
                         method="POST">
                         @csrf
                         <x-buttons.primary submit>
-                            {{ __('Logout') }}
+                            {{ __('Log uit') }}
                         </x-buttons.primary>
                     </form>
                 @endguest
