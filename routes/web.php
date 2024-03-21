@@ -4,23 +4,23 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+
 /**
  *
- * AmoClient Auth
+ * SD Client Auth
  *
  */
-
 Route::get('/login', function(){
-	return redirect('/amoclient/redirect');
+	return redirect('/sdclient/redirect');
 })->name('login');
 
 Route::post('/logout', function(Request $request){
     Auth::logout();
 
-	return redirect('/amoclient/logout');
+	return redirect('/sdclient/logout');
 })->name('logout');
 
-Route::get('/amoclient/ready', function(){
+Route::get('/sdclient/ready', function(){
 	return redirect()->route('dashboard');
 });
 

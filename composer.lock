@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fcc69031dcdbbe2a654420427f2dcb17",
+    "content-hash": "09ca07dbf2247f6160b9b4fc2ee2b49a",
     "packages": [
         {
             "name": "brick/math",
@@ -195,6 +195,55 @@
                 }
             ],
             "time": "2023-12-20T15:40:13+00:00"
+        },
+        {
+            "name": "curio/sdclient",
+            "version": "v4.1.1-alpha",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/curio-team/sdclient.git",
+                "reference": "4d479c834da7994c4096f61c5d5138db3be0b22b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/curio-team/sdclient/zipball/4d479c834da7994c4096f61c5d5138db3be0b22b",
+                "reference": "4d479c834da7994c4096f61c5d5138db3be0b22b",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.0",
+                "lcobucci/jwt": "4.0.4"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.14"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Curio\\SdClient\\SdClientServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Curio\\SdClient\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "CC-BY-NC-SA-4.0"
+            ],
+            "authors": [
+                {
+                    "name": "Bart Roos"
+                }
+            ],
+            "description": "Client for sdlogin",
+            "support": {
+                "source": "https://github.com/curio-team/sdclient/tree/v4.1.1-alpha"
+            },
+            "time": "2024-03-02T10:15:19+00:00"
         },
         {
             "name": "dflydev/dot-access-data",
@@ -4492,54 +4541,6 @@
                 "source": "https://github.com/stella-maris-solutions/clock/tree/0.1.7"
             },
             "time": "2022-11-25T16:15:06+00:00"
-        },
-        {
-            "name": "studiokaa/amoclient",
-            "version": "v3.3.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/StudioKaa/amoclient.git",
-                "reference": "ea8547c16ef597e7065b2d96d1814dce41646d9d"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/StudioKaa/amoclient/zipball/ea8547c16ef597e7065b2d96d1814dce41646d9d",
-                "reference": "ea8547c16ef597e7065b2d96d1814dce41646d9d",
-                "shasum": ""
-            },
-            "require": {
-                "guzzlehttp/guzzle": "^7.0",
-                "lcobucci/jwt": "4.0.4"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "StudioKaa\\Amoclient\\AmoclientServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "StudioKaa\\Amoclient\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "CC-BY-NC-SA-4.0"
-            ],
-            "authors": [
-                {
-                    "name": "Bart Roos",
-                    "email": "bart@studiokaa.co"
-                }
-            ],
-            "description": "Client for amologin",
-            "support": {
-                "issues": "https://github.com/StudioKaa/amoclient/issues",
-                "source": "https://github.com/StudioKaa/amoclient/tree/v3.3.0"
-            },
-            "time": "2023-12-15T14:34:07+00:00"
         },
         {
             "name": "symfony/console",
@@ -9639,7 +9640,7 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,

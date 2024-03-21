@@ -6,6 +6,7 @@
     "license": "MIT",
     "require": {
         "php": ">8.0 <8.2",
+        "curio/sdclient": "^4.1@alpha",
         "guzzlehttp/guzzle": "^7.2",
         "knplabs/github-api": "^3.13.0",
         "laravel/framework": "^10.0",
@@ -14,7 +15,6 @@
         "lcobucci/jwt": "4.0.4",
         "livewire/livewire": "^3.0",
         "spatie/laravel-settings": "^3.2",
-        "studiokaa/amoclient": "^3.3.0",
         "yethee/tiktoken": "^0.3.0"
     },
     "require-dev": {
@@ -69,6 +69,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }
