@@ -13,7 +13,7 @@
         "laravel/sanctum": "^3.2",
         "laravel/tinker": "^2.7",
         "lcobucci/jwt": "4.0.4",
-        "livewire/livewire": "^3.0",
+        "livewire/livewire": "^3.4.9",
         "spatie/laravel-settings": "^3.2",
         "yethee/tiktoken": "^0.3.0"
     },
