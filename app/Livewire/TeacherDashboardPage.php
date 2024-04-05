@@ -37,6 +37,17 @@ class TeacherDashboardPage extends Component
         return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
     }
 
+    public function lockProjects($locked)
+    {
+        $client = new Client();
+        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
+        $organization = config('app.github_organization');
+
+        $client->organizations()->update($organization, [
+            'has_organization_projects' => !$locked,
+        ]);
+    }
+
     public function updateChatPassword(ChatSettings $settings)
     {
         $settings->chat_password = $this->chatPassword;
@@ -116,6 +127,8 @@ class TeacherDashboardPage extends Component
             $team->locked = true;
             $team->save();
         }
+
+        $this->lockProjects(true);
     }
 
     /**
@@ -137,6 +150,8 @@ class TeacherDashboardPage extends Component
             $team->locked = false;
             $team->save();
         }
+
+        $this->lockProjects(false);
     }
 
     /**

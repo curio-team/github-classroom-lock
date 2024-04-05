@@ -37,6 +37,14 @@
             <p>Het werkt door studenten als leden van hun team te verwijderen, maar houdt hun lidmaatschap bij. Op deze manier kun je later beslissen om ze weer toe te voegen.</p>
             <p>De knop 'Snapshot bijwerken' vindt alle GitHub-teams in de organisatie '{{ config('app.github_organization') }}' waarvan de naam overeenkomt met dit regex-patroon: {{ config('app.github_team_pattern') }}.</p>
         </x-content.hint>
+        <p>Daarnaast moet GitHub Projects ook los worden uitgeschakeld, dat kan via deze knoppen:</p>
+        <div class="flex flex-row gap-4">
+            <x-buttons.primary wire:click="lockProjects(true)">Vergrendel GitHub Projects</x-buttons.primary>
+            <x-buttons.danger wire:click="lockProjects(false)">Ontgrendel GitHub Projects</x-buttons.danger>
+        </div>
+        <x-content.hint>
+            <p>Vanwege een gebrek aan tijd zijn bijde knoppen zichtbaar. Het kan geen kwaad om een knop meerdere keren in te drukken, klik gewoon op wat je wilt dat er gebeurt.</p>
+        </x-content.hint>
     </x-content.section>
 
     <x-content.section>
