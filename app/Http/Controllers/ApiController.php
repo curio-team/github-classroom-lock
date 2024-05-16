@@ -11,13 +11,22 @@ use Yethee\Tiktoken\EncoderProvider;
 
 class ApiController extends Controller
 {
-    private static function getModelId(string $modelId)
+    public static function getModelIds()
     {
-        return match ($modelId) {
-            'GPT-4' => 'gpt-4-0125-preview',
-            'GPT-3.5' => 'gpt-3.5-turbo-0125',
-            default => 'gpt-3.5-turbo-0125',
-        };
+        $settings = app(ChatSettings::class);
+
+        return [
+            'GPT-3.5' => $settings->model_gpt3,
+            'GPT-4' => $settings->model_gpt4,
+        ];
+    }
+
+
+    public static function getModelId(string $modelId)
+    {
+        $models = self::getModelIds();
+
+        return isset($models[$modelId]) ? $models[$modelId] : $models['GPT-3.5'];
     }
 
     private static function getModelTokenLimit(string $modelId)

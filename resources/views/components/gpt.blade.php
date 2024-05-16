@@ -16,6 +16,12 @@
             Gebruik voornamelijk het GPT-3.5 model en schakel alleen over naar GPT-4 wanneer dat nodig blijkt.
         </x-notice>
 
+        <x-notice type="warning" icon="🧹">
+            <strong>Ververs de pagina wanneer je klaar bent met een chatsessie!</strong>
+            Als je steeds de hele chatgeschiedenis meestuurt, kan het zijn dat je chatlimiet sneller bereikt is.
+            Daarbij raakt de AI er soms van in de war als er teveel informatie wordt meegestuurd.
+        </x-notice>
+
         <div x-data="{ maximized: false }"
             x-bind:class="{ 'fixed inset-0 bg-black': maximized }">
 
@@ -29,6 +35,9 @@
                     @endphp
 
                     @foreach (user()->getChatLimits() as $model => $limit)
+                    @if(!isset($defaultMaxChats[$model]))
+                        @continue
+                    @endif
                     @php $modelMaxChats = $defaultMaxChats[$model] @endphp
                     <label for="model-{{ $model }}"
                         class="flex-1 flex flex-col items-center bg-slate-200 p-4 border-l @if ($loop->first) rounded-tl @endif border-slate-400 @if ($modelMaxChats === -1 || $limit > 0) hover:bg-slate-300 cursor-pointer @else opacity-50 cursor-not-allowed @endif">
@@ -40,6 +49,9 @@
                                 id="model-{{ $model }}"
                                 {{ $loop->first ? 'checked' : '' }}>
                             {{ $model }}
+                            <small>
+                                ({{ App\Http\Controllers\ApiController::getModelId($model) }})
+                            </small>
                         </div>
                         @if ($modelMaxChats === -1)
                             <span class="text-xs">Onbeperkt aantal tokens, zolang de voorraad strekt</span>
