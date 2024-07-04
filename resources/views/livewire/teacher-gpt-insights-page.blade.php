@@ -1,4 +1,6 @@
-<x-content.main>
+<x-content.main
+    x-data="{ cheatActive: false }"
+    x-on:keydown.window="if (event.altKey && event.code === 'KeyC') { cheatActive = true; }">
     <x-content.section>
         <x-headings.page>CurioGPT Chat Tokens</x-headings.page>
         <p>Per student, per dag, zijn de volgende hoeveelheid <x-buttons.link href="https://platform.openai.com/tokenizer" target="blank">tokens</x-buttons.link> beschikbaar:</p>
@@ -6,9 +8,18 @@
             @foreach ($chatTokensMaxPerUserPerModelPerDay as $model => $modelChatTokensMax)
                 <li class="mt-2">
                     <strong>{{ $model }}:</strong> @if($modelChatTokensMax > -1) {{ $modelChatTokensMax }} tokens @else Onbeperkt @endif
+                    <input type="text"
+                        wire:model="models.{{ crc32($model) }}"
+                        x-bind:disabled="!cheatActive" >
                 </li>
             @endforeach
         </ul>
+
+        <x-buttons.primary wire:click="saveModels"
+            x-cloak
+            x-show="cheatActive">
+            Opslaan
+        </x-buttons.primary>
 
         <p class="italic">Studenten vinden hun beschikbare hoeveelheid tokens aangeduid bij het relevante model.</p>
     </x-content.section>
@@ -21,9 +32,7 @@
             </div>
         </div>
 
-        <table class="w-full"
-            x-data="{ cheatActive: false }"
-            x-on:keydown.window="if (event.altKey && event.code === 'KeyC') { cheatActive = true; }">
+        <table class="w-full">
             <thead>
                 <tr>
                     <th class="p-2 text-left">Gebruikersnaam</th>
@@ -38,6 +47,9 @@
                         <td class="p-2 whitespace-nowrap">
                             @if ($user->chats_remaining)
                                 @foreach ($user->chats_remaining as $model => $limit)
+                                    @if(!isset($chatTokensMaxPerUserPerModelPerDay[$model]))
+                                        @continue
+                                    @endif
                                     @if ($chatTokensMaxPerUserPerModelPerDay[$model] > -1)
                                         <div class="flex flex-row gap-2 items-center">
                                             <span class="text-xs">{{ $model }}:</span>

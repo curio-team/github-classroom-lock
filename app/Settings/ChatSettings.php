@@ -21,6 +21,16 @@ class ChatSettings extends Settings
      */
     public array $max_user_chat_tokens_per_model_per_day;
 
+    /**
+     * The GPT-3 model to use.
+     */
+    public string $model_gpt3;
+
+    /**
+     * The GPT-4 model to use.
+     */
+    public string $model_gpt4;
+
     public static function group(): string
     {
         return 'chat';
