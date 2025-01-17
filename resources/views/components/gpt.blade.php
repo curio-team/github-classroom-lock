@@ -12,8 +12,8 @@
         </x-notice>
 
         <x-notice icon="🤖">
-            Het GPT-4 model is duurder, vandaar dat er een beperkt aantal tokens per dag beschikbaar is per gebruiker.
-            Gebruik voornamelijk het GPT-3.5 model en schakel alleen over naar GPT-4 wanneer dat nodig blijkt.
+            Het &quot;advanced&quot; model is duurder, vandaar dat er een beperkt aantal tokens per dag beschikbaar is per gebruiker.
+            Gebruik voornamelijk het mini model en schakel alleen over naar het geavanceerde wanneer dat nodig blijkt.
         </x-notice>
 
         <x-notice type="warning" icon="🧹">
@@ -169,7 +169,8 @@
                             x-bind:contenteditable="isEditting"
                             x-effect="isEditting ? $refs.chatMessageText.focus() : null"
                             x-ref="chatMessageText"></p>
-                            <div class="flex justify-between gap-2 mt-2">
+                            <div class="flex justify-between gap-2 mt-2"
+                                x-show="isEditting">
                                 <x-buttons.danger tight
                                     title="Verwijder bericht"
                                     aria-label="Verwijder bericht"
@@ -402,6 +403,14 @@
                             onReceivedFull(currentMessage, canBeSummarized);
                         }
 
+                        window.dispatchEvent(new CustomEvent('app-chat-received', {
+                            bubbles: true,
+                            detail: {},
+                        }));
+                    }).catch(error => {
+                        console.error(error);
+                        onReceivedFull('Er is een fout opgetreden bij het ophalen van het bericht.', false);
+                        setFormDisabled(false);
                         window.dispatchEvent(new CustomEvent('app-chat-received', {
                             bubbles: true,
                             detail: {},

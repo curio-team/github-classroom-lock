@@ -10,3 +10,20 @@ if (!function_exists('user')) {
         return auth()->user();
     }
 }
+
+if (!function_exists('number_format_locale')) {
+    /**
+     * Formats a number according to the locale settings.
+     */
+    function number_format_locale(float $number, float $decimals = 0): string
+    {
+        $locale = localeconv();
+
+        return number_format(
+            $number,
+            $decimals,
+            $locale['decimal_point'],
+            $locale['thousands_sep']
+        );
+    }
+}

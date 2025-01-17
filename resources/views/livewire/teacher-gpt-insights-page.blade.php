@@ -37,7 +37,13 @@
                 <tr>
                     <th class="p-2 text-left">Gebruikersnaam</th>
                     <th class="p-2 text-left">Token Limieten </th>
-                    <th class="p-2 text-left"></th>
+                    <th class="p-2 text-left whitespace-nowrap">
+                        <x-buttons.danger wire:click="halveAllTokens()"
+                            x-cloak
+                            x-show="cheatActive">
+                            Halveer Alle Token Limieten
+                        </x-buttons.danger>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -135,6 +141,17 @@
         <div x-show="open" class="fixed inset-0 bg-gray-800 bg-opacity-90 grid place-items-center justify-center text-white">
             <div class="flex flex-col items-center gap-2 rounded bg-gray-800 p-8 shadow">
                 <div class="text-2xl">Token limiet gereset voor <span x-text="userName"></span></div>
+                <div class="flex flex-row gap-2 mt-8">
+                    <x-buttons.secondary x-on:click="open = false">Sluiten</x-buttons.secondary>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-data="{ open: false }" x-on:all-tokens-halved.window="open = true">
+        <div x-show="open" class="fixed inset-0 bg-gray-800 bg-opacity-90 grid place-items-center justify-center text-white">
+            <div class="flex flex-col items-center gap-2 rounded bg-gray-800 p-8 shadow">
+                <div class="text-2xl">Alle token limieten gehalveerd</div>
                 <div class="flex flex-row gap-2 mt-8">
                     <x-buttons.secondary x-on:click="open = false">Sluiten</x-buttons.secondary>
                 </div>

@@ -16,8 +16,8 @@ class ApiController extends Controller
         $settings = app(ChatSettings::class);
 
         return [
-            'GPT-3.5' => $settings->model_gpt3,
-            'GPT-4' => $settings->model_gpt4,
+            'mini' => $settings->model_mini,
+            'advanced' => $settings->model_advanced,
         ];
     }
 
@@ -26,7 +26,7 @@ class ApiController extends Controller
     {
         $models = self::getModelIds();
 
-        return isset($models[$modelId]) ? $models[$modelId] : $models['GPT-3.5'];
+        return isset($models[$modelId]) ? $models[$modelId] : $models['mini'];
     }
 
     private static function getModelTokenLimit(string $modelId)
@@ -34,7 +34,7 @@ class ApiController extends Controller
         $summaryLength = strlen(json_encode(static::getSummaryPrompt('')));
 
         return match ($modelId) {
-            'GPT-4' => 16000,
+            'advanced' => 16000,
             default => 4000
         } - $summaryLength;
     }
@@ -42,8 +42,8 @@ class ApiController extends Controller
     private static function getTiktokenId(string $modelId)
     {
         return match ($modelId) {
-            'GPT-4' => 'gpt-4',
-            default => 'gpt-3.5-turbo'
+            'advanced' => 'gpt-4',
+            default => 'gpt-4o-mini'
         };
     }
 
@@ -79,7 +79,13 @@ class ApiController extends Controller
         $history = $request->input('history');
         $shouldSummarizeHistory = $request->input('should_summarize_history');
 
-        if ($shouldSummarizeHistory) {
+        // Inject the system prompt before all messages
+        array_unshift( $history, [
+            'role' => 'system',
+            'content' => "Je bent een behulpzame assistent genaamd 'CurioGPT' die helpt met vragen over Software Development.",
+        ]);
+
+        if ($shouldSummarizeHistory && $settings->summarization_enabled) {
             // JSON encode the history and ask the AI to summarize it
             $encodedHistory = json_encode($history);
 
@@ -117,7 +123,7 @@ class ApiController extends Controller
         // Flush whatever is in the output buffer so we can immediately send fully formed JSON responses
         @ob_end_flush();
 
-        return new StreamedResponse(function () use ($request, $modelId, $history, $shouldSummarizeHistory) {
+        return new StreamedResponse(function () use ($request, $modelId, $history, $shouldSummarizeHistory, $settings) {
             $model = self::getModelId($modelId);
             $apiKey = env('OPENAI_API_KEY');
             $client = new Client([
@@ -189,9 +195,12 @@ class ApiController extends Controller
                 $statusCode = $e->getResponse()->getStatusCode();
 
                 if ($statusCode === 400) {
+                    $summarizationInfo = $settings->summarization_enabled
+                        ? ' of gebruik de knop om door te gaan met een samenvatting van het bovenstaande'
+                        : '.';
                     echo json_encode([
-                        'content' => 'Sorry, ik kon geen antwoord van de AI krijgen. Het lijkt erop dat de tokenlimiet is bereikt. Vernieuw de pagina om een nieuwe chat te starten of gebruik de knop om door te gaan met een samenvatting van het bovenstaande.',
-                        'can_be_summarized' => true,
+                        'content' => 'Sorry, ik kon geen antwoord van de AI krijgen. Het lijkt erop dat de tokenlimiet is bereikt. Vernieuw de pagina om een nieuwe chat te starten'.$summarizationInfo,
+                        'can_be_summarized' => $settings->summarization_enabled,
                         'error' => $e->getMessage(),
                     ]) . "\n\n";
                 } else {

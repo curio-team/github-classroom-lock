@@ -63,7 +63,10 @@ class User extends Authenticatable
         }
 
         $remainingChats = $this->chats_remaining ?? ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay();
-        ksort($remainingChats);
+
+        // Sort so the lowest limit model is first
+        asort($remainingChats);
+
         return $remainingChats;
     }
 

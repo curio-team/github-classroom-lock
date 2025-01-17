@@ -47,10 +47,20 @@ class TeacherGptInsightsPage extends Component
         $this->dispatch('user-tokens-reset', userName: $user->name);
     }
 
+    public function halveAllTokens()
+    {
+        User::query()->update([
+            // We only halve the advanced tokens, as the mini tokens have no limit (-1)
+            'chats_remaining' => User::raw('JSON_SET(chats_remaining, "$.advanced", chats_remaining->"$.advanced" / 2)'),
+        ]);
+
+        $this->dispatch('all-tokens-halved');
+    }
+
     public function saveModels(ChatSettings $settings)
     {
-        $settings->model_gpt3 = $this->models[crc32('GPT-3.5')];
-        $settings->model_gpt4 = $this->models[crc32('GPT-4')];
+        $settings->model_mini = $this->models[crc32('mini')];
+        $settings->model_advanced = $this->models[crc32('advanced')];
         $settings->save();
     }
 }

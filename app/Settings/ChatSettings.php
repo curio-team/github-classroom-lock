@@ -22,14 +22,19 @@ class ChatSettings extends Settings
     public array $max_user_chat_tokens_per_model_per_day;
 
     /**
-     * The GPT-3 model to use.
+     * The low-cost model to use.
      */
-    public string $model_gpt3;
+    public string $model_mini;
 
     /**
-     * The GPT-4 model to use.
+     * Whether to enable summarization for long chats.
      */
-    public string $model_gpt4;
+    public bool $summarization_enabled;
+
+    /**
+     * The advanced (more expensive and thus limited) model to use.
+     */
+    public string $model_advanced;
 
     public static function group(): string
     {
@@ -39,8 +44,8 @@ class ChatSettings extends Settings
     public static function getDefaultMaxUserChatTokensPerModelPerDay(): array
     {
         return [
-            'GPT-4' => 46300,
-            'GPT-3.5' => -1,
+            'advanced' => 46300,
+            'mini' => -1,
         ];
     }
 }
