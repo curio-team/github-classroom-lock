@@ -21,11 +21,12 @@ This helps us restrict access when students leave our school.
 
 1. [Get a Fine-grained access token from GitHub here](https://github.com/settings/personal-access-tokens/new).
 2. Select the `curio-summatief` organization
-3. Give it the following permissions:
-    * Organization permissions:
-        * Members: read and write
+3. Select `All repositories` under 'Repository access'
+4. Give it the following permissions:
     * *(Optional) Repository permissions:*
         * *Contents: read*
+    * Organization permissions:
+        * Members: read and write
 
 ### OpenAI access token
 

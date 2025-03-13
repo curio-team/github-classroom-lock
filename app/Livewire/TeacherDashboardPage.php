@@ -71,13 +71,8 @@ class TeacherDashboardPage extends Component
     {
         [$client, $paginator] = $this->getApiClientAndPaginator();
         $organization = config('app.github_organization');
-        $pattern = config('app.github_team_pattern');
 
         $teams = $paginator->fetchAll($client->teams(), 'all', [$organization]);
-
-        $teams = array_filter($teams, function ($team) use($pattern) {
-            return preg_match($pattern, $team['name']);
-        });
 
         foreach ($teams as $teamData) {
             $membersData = $paginator->fetchAll($client->teams(), 'members', [$teamData['slug'], $organization]);

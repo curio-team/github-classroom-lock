@@ -35,7 +35,7 @@
 
         <x-content.hint>
             <p>Het werkt door studenten als leden van hun team te verwijderen, maar houdt hun lidmaatschap bij. Op deze manier kun je later beslissen om ze weer toe te voegen.</p>
-            <p>De knop 'Snapshot bijwerken' vindt alle GitHub-teams in de organisatie '{{ config('app.github_organization') }}' waarvan de naam overeenkomt met dit regex-patroon: {{ config('app.github_team_pattern') }}.</p>
+            <p>De knop 'Snapshot bijwerken' vindt alle GitHub-teams in de organisatie '{{ config('app.github_organization') }}'.</p>
         </x-content.hint>
         <p>Daarnaast moet GitHub Projects ook los worden uitgeschakeld, dat kan via deze knoppen:</p>
         <div class="flex flex-row gap-4">

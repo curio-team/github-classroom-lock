@@ -42,7 +42,6 @@ return [
 
     'github_token' => env('GITHUB_TOKEN'),
     'github_organization' => env('GITHUB_ORGANIZATION', 'curio-summatief'),
-    'github_team_pattern' => env('GITHUB_TEAM_PATTERN', '/^pvb-/'),
 
     /*
     |--------------------------------------------------------------------------
