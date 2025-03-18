@@ -125,7 +125,7 @@ class ApiController extends Controller
 
         return new StreamedResponse(function () use ($request, $modelId, $history, $shouldSummarizeHistory, $settings) {
             $model = self::getModelId($modelId);
-            $apiKey = env('OPENAI_API_KEY');
+            $apiKey = config('app.openai_api_key');
             $client = new Client([
                 'base_uri' => 'https://api.openai.com/v1/',
                 'stream' => true

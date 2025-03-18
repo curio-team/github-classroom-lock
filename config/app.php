@@ -32,7 +32,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | GitHub API Information
+    | GitHub & OpenAI API Information
     |--------------------------------------------------------------------------
     |
     | These configurations determine how the API will be authenticated with and
@@ -42,6 +42,7 @@ return [
 
     'github_token' => env('GITHUB_TOKEN'),
     'github_organization' => env('GITHUB_ORGANIZATION', 'curio-summatief'),
+    'openai_api_key' => env('OPENAI_API_KEY'),
 
     /*
     |--------------------------------------------------------------------------
