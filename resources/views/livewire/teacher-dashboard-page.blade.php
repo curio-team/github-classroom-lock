@@ -1,4 +1,6 @@
-<x-content.main>
+<x-content.main
+    x-data="{ cheatActive: false }"
+    x-on:keydown.window="if (event.altKey && event.code === 'KeyC') { cheatActive = true; }">
     <x-content.section>
         <x-headings.page>CurioGPT Chat</x-headings.page>
         <p>
@@ -111,12 +113,20 @@
 
             <x-content.stack-layout row wrap tight class="justify-between">
                 <x-buttons.primary wire:click="makeTeamSnapshot">Ontdek nieuwe teams op GitHub (Update Snapshot)</x-buttons.primary>
-                @if ($teamsLocked)
-                    <x-buttons.primary wire:click="unlockAllTeams">Ontgrendel Alle Teams</x-buttons.primary>
-                @else
-                    <x-buttons.danger wire:click="lockAllTeams">Vergrendel Alle Teams</x-buttons.danger>
-                @endif
+
+                <x-content.stack-layout row wrap tight x-cloak x-show="cheatActive">
+                    @if ($teamsLocked)
+                        <x-buttons.primary wire:click="unlockAllTeams">Ontgrendel Alle Teams</x-buttons.primary>
+                    @else
+                        <x-buttons.danger wire:click="lockAllTeams">Vergrendel Alle Teams</x-buttons.danger>
+                    @endif
+                </x-content.stack-layout>
             </x-content.stack-layout>
+
+            <x-content.hint x-cloak x-show="cheatActive">
+                Gebruik de &quot;Ontgrendel/Vergrendel Alle Teams&quot; functie niet op dagen dat er op de andere locatie (Roosendaal/Breda) geen examens zijn.
+                Open dan individueel de aanwezige teams, zodat studenten die niet aanwezig zijn geen toegang hebben tot hun team.
+            </x-content.hint>
         </x-content.stack-layout>
     </x-content.section>
 
