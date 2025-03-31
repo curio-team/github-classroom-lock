@@ -78,6 +78,14 @@
                                     class="w-8 h-8 rounded"
                                 />
                                 {{ $member->login }}
+                                <x-buttons.danger
+                                    x-show="cheatActive"
+                                    class="py-1"
+                                    @click="if (confirm('Weet je zeker dat je deze student uit dit team wilt verwijderen in de snapshot? Dit is handig wanneer de student al handmatig is verwijderd uit het team op GitHub.')) { $wire.removeFromTeamSnapshot('{{ $member->id }}') }"
+                                    title="Verwijder deze student uit het team in de snapshot"
+                                    tight>
+                                    &times;
+                                </x-buttons.danger>
                             </x-content.stack-layout>
                         @empty
                             <x-content.hint>

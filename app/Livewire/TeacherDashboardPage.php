@@ -102,6 +102,16 @@ class TeacherDashboardPage extends Component
     }
 
     /**
+     * Removes the specified member from the given team. This is useful when
+     * a member is removed from the team manually on GitHub, and we want to
+     * keep the local database in sync.
+     */
+    public function removeFromTeamSnapshot($memberId)
+    {
+        \App\Models\TeamMember::findOrFail($memberId)->delete();
+    }
+
+    /**
      * Locks all teams by removing their members on GitHub.
      */
     public function lockAllTeams()
