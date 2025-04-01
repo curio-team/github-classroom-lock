@@ -141,7 +141,7 @@
                                                 title="Kopieer bericht"
                                                 aria-label="Kopieer bericht"
                                                 @click="$tooltip('Bericht gekopieerd naar klembord!')"
-                                                x-clipboard="$refs.chatMessageText.innerText">
+                                                x-clipboard="atob($refs.chatMessageText.dataset.originalText)">
                                 <x-slot name="icon">
                                     <x-icons.copy />
                                 </x-slot>
@@ -246,6 +246,7 @@
 
                     const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
                     messageTextEl.innerText = message;
+                    messageTextEl.dataset.originalText = btoa(message);
 
                     chatHistory.appendChild(messageContainerEl);
                     chatScrollToBottom();
@@ -445,6 +446,7 @@
                         if (content.endsWith('\n')) {
                             const html = marked.parse(currentMessage);
                             messageTextEl.innerHTML = html;
+                            messageTextEl.dataset.originalText = btoa(currentMessage);
                             return;
                         }
 
