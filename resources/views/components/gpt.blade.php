@@ -521,7 +521,7 @@
                         setTimeout(sizePromptEl, 1);
                     }
 
-                    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+                    if (event.ctrlKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
                         event.preventDefault();
                         const historyLength = history.length;
 
