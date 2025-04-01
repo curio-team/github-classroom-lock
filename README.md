@@ -27,7 +27,7 @@ This helps us restrict access when students leave our school.
         * *Contents: read*
     * Organization permissions:
         * Members: read and write
-        * Projects: admin
+        * Administration: read and write, for the (un)locking of Projects
 
 ### OpenAI access token
 
