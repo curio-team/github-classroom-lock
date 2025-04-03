@@ -141,7 +141,7 @@
                                                 title="Kopieer bericht"
                                                 aria-label="Kopieer bericht"
                                                 @click="$tooltip('Bericht gekopieerd naar klembord!')"
-                                                x-clipboard="atob($refs.chatMessageText.dataset.originalText)">
+                                                x-clipboard="atou($refs.chatMessageText.dataset.originalText)">
                                 <x-slot name="icon">
                                     <x-icons.copy />
                                 </x-slot>
@@ -204,6 +204,13 @@
                 let lastScrollByUser = 0;
                 const history = [];
 
+                function utoa(data) {
+                    return btoa(unescape(encodeURIComponent(data)));
+                }
+                function atou(b64) {
+                    return decodeURIComponent(escape(atob(b64)));
+                }
+
                 function setFormDisabled(disabled) {
                     submitButtonEl._x_dataStack[0].disabled = disabled;
                     isChatDisabled = disabled;
@@ -246,7 +253,7 @@
 
                     const messageTextEl = messageContainerEl.querySelector('.chat-message-text');
                     messageTextEl.innerText = message;
-                    messageTextEl.dataset.originalText = btoa(message);
+                    messageTextEl.dataset.originalText = utoa(message);
 
                     chatHistory.appendChild(messageContainerEl);
                     chatScrollToBottom();
@@ -446,7 +453,7 @@
                         if (content.endsWith('\n')) {
                             const html = marked.parse(currentMessage);
                             messageTextEl.innerHTML = html;
-                            messageTextEl.dataset.originalText = btoa(currentMessage);
+                            messageTextEl.dataset.originalText = utoa(currentMessage);
                             return;
                         }
 
