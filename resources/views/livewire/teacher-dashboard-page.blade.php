@@ -41,12 +41,12 @@
         </x-content.hint>
         <p>Daarnaast moet GitHub Projects ook los worden uitgeschakeld, dat kan via deze knoppen:</p>
         <div class="flex flex-row gap-4">
-            <x-buttons.primary wire:click="lockProjects(true)">Vergrendel GitHub Projects</x-buttons.primary>
-            <x-buttons.danger wire:click="lockProjects(false)">Ontgrendel GitHub Projects</x-buttons.danger>
+            @if($isProjectsEnabled)
+            <x-buttons.danger wire:click="lockProjects(true)">Vergrendel GitHub Projects</x-buttons.danger>
+            @else
+            <x-buttons.primary wire:click="lockProjects(false)">Ontgrendel GitHub Projects</x-buttons.primary>
+            @endif
         </div>
-        <x-content.hint>
-            <p>Vanwege een gebrek aan tijd zijn bijde knoppen zichtbaar. Het kan geen kwaad om een knop meerdere keren in te drukken, klik gewoon op wat je wilt dat er gebeurt.</p>
-        </x-content.hint>
     </x-content.section>
 
     <x-content.section>

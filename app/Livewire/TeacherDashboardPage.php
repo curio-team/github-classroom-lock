@@ -14,10 +14,17 @@ class TeacherDashboardPage extends Component
     public $showArchived = false;
 
     public $chatPassword;
+    public $isProjectsEnabled;
 
     public function mount(ChatSettings $settings)
     {
         $this->chatPassword = $settings->chat_password;
+
+        $client = new Client();
+        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
+        $organization = config('app.github_organization');
+
+        $this->isProjectsEnabled = $client->organizations()->show($organization)['has_organization_projects'] ?? false;
     }
 
     public function render(ChatSettings $settings)
