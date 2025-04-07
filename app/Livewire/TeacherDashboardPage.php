@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Team;
 use App\Settings\ChatSettings;
 use Github\AuthMethod;
 use Github\Client;
@@ -84,32 +85,13 @@ class TeacherDashboardPage extends Component
      * Creates a Project for the given team and links it to the team. This will ensure that
      * when the teams are locked, the members lose access to the project.
      */
-    public function createProject($teamId)
+    public function createProject(Client $client, Team $team, string $organizationId)
     {
-        $team = \App\Models\Team::withArchived()
-            ->where('id', $teamId)
-            ->first();
-
-        $organization = config('app.github_organization');
-        $client = new Client();
-        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
-
-        // First get the organization ID for the GraphQL query
-        $organizationInfoQuery = <<<QUERY
-        query{
-            organization(login: "$organization"){
-                id
-            }
-        }
-        QUERY;
-
-        $result = $client->api('graphql')->execute($organizationInfoQuery);
-        $organizationId = $result['data']['organization']['id'];
-
         // Find the team ID for GraphQL by name
+        $organization = config('app.github_organization');
         $organizationTeamsQuery = <<<QUERY
         {
-            organization(login: "curio-summatief") {
+            organization(login: "$organization") {
                 teams(first: 100) {
                     nodes {
                         id
@@ -134,7 +116,7 @@ class TeacherDashboardPage extends Component
         $queryTeamId = null;
 
         foreach ($result['data']['organization']['teams']['nodes'] as $teamNode) {
-            if ($teamNode['databaseId'] == (int)$teamId) {
+            if ($teamNode['databaseId'] == $team->id) {
                 $queryTeamId = $teamNode['id'];
                 break;
             }
@@ -178,18 +160,83 @@ class TeacherDashboardPage extends Component
         QUERY;
 
         $result = $client->api('graphql')->execute($linkProjectQuery);
+    }
 
-        // Check for errors
-        if (isset($result['errors'])) {
-            $errorMessage = $result['errors'][0]['message'];
-            return redirect()
-                ->route('dashboard.teacher')
-                ->with('error', "Error creating project: $errorMessage");
+    public function requestCreateProject($teamId)
+    {
+        $team = \App\Models\Team::withArchived()
+            ->where('id', $teamId)
+            ->first();
+
+        $organization = config('app.github_organization');
+        $client = new Client();
+        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
+
+        // First get the organization ID for the GraphQL query
+        $organizationInfoQuery = <<<QUERY
+        query{
+            organization(login: "$organization"){
+                id
+            }
         }
+        QUERY;
+
+        $result = $client->api('graphql')->execute($organizationInfoQuery);
+        $organizationId = $result['data']['organization']['id'];
+
+        $this->createProject($client, $team, $organizationId);
 
         return redirect()
             ->route('dashboard.teacher')
-            ->with('success', 'Project created and linked to team successfully.');
+            ->with('success', 'Project aangemaakt en met team gekoppeld.');
+    }
+
+    /**
+     * Creates projects for all teams that currently have 0 projects.
+     */
+    public function createProjectsForTeamsWithoutProject()
+    {
+        $teamIdsWithoutProject = collect($this->teamProjects)
+            ->filter(function ($projects) {
+                return count($projects) === 0;
+            })
+            ->keys()
+            ->all();
+
+        if (empty($teamIdsWithoutProject)) {
+            return redirect()
+                ->route('dashboard.teacher')
+                ->with('warning', 'Alle teams hebben al een project');
+        }
+
+        $teams = Team::whereIn('id', $teamIdsWithoutProject)
+            ->get();
+
+        $organization = config('app.github_organization');
+        $client = new Client();
+        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
+
+        // First get the organization ID for the GraphQL query
+        $organizationInfoQuery = <<<QUERY
+        query{
+            organization(login: "$organization"){
+                id
+            }
+        }
+        QUERY;
+
+        $result = $client->api('graphql')->execute($organizationInfoQuery);
+        $organizationId = $result['data']['organization']['id'];
+
+        foreach ($teams as $team) {
+            $this->createProject($client, $team, $organizationId);
+        }
+
+        $count = count($teamIdsWithoutProject);
+
+        return redirect()
+            ->route('dashboard.teacher')
+            ->with('success', "Projecten aangemaakt voor $count teams zonder project.");
     }
 
     /**

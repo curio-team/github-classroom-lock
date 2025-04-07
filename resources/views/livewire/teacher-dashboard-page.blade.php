@@ -111,7 +111,7 @@
                                 Geen projecten gevonden. Maak ten minste het eerste project aan.
                             </x-content.hint>
                         @endforelse
-                        <x-buttons.secondary @click="if (confirm('Weet je zeker dat je een nieuw project wilt aanmaken voor dit team?')) { $wire.createProject('{{ $team->id }}') }">Cre&euml;er Project</x-buttons.secondary>
+                        <x-buttons.secondary @click="if (confirm('Weet je zeker dat je een nieuw project wilt aanmaken voor dit team?')) { $wire.requestCreateProject('{{ $team->id }}') }">Cre&euml;er Project</x-buttons.secondary>
                     </x-content.stack-layout>
 
                     <x-content.stack-layout row x-data="{}">
@@ -142,6 +142,9 @@
 
             <x-content.stack-layout row wrap tight class="justify-between">
                 <x-buttons.primary wire:click="makeTeamSnapshot">Ontdek nieuwe teams op GitHub (Update Snapshot)</x-buttons.primary>
+                <x-buttons.primary @click="if (confirm('Weet je zeker dat je een nieuw project wilt aanmaken voor elk team zonder projecten? Dit kan tot 30 seconden duren.')) { $wire.createProjectsForTeamsWithoutProject() }">
+                    Maak Project voor elk team zonder Projecten
+                </x-buttons.primary>
 
                 <x-content.stack-layout row wrap tight x-cloak x-show="cheatActive">
                     @if ($teamsLocked)
