@@ -11,7 +11,24 @@ Livewire.start();
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css'; // for React, Vue and Svelte
 
-window.Notyf = new Notyf();
+window.Notyf = new Notyf({
+    duration: 0,
+    dismissible: true,
+    position: {
+        x: 'right',
+        y: 'top',
+    },
+    types: [
+        {
+            type: 'warning',
+            background: 'orange',
+            icon: {
+                className: 'notyf__icon--error',
+                tagName: 'i',
+            },
+        },
+    ],
+});
 
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';

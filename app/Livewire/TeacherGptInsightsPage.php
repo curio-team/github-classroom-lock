@@ -27,13 +27,19 @@ class TeacherGptInsightsPage extends Component
         $users = User::where('name', 'like', '%' . $this->searchUser . '%')
             ->orWhere('email', 'like', '%' . $this->searchUser . '%')
             ->latest()
-            ->paginate(10);
+            ->paginate(
+                perPage: 10,
+                pageName: 'usersPage'
+            );
 
         $chatTokensMaxPerUserPerModelPerDay = $settings->max_user_chat_tokens_per_model_per_day;
 
         $chatLogs = ChatLog::where('prompt', 'like', '%' . $this->search . '%')
             ->latest()
-            ->paginate(10);
+            ->paginate(
+                perPage: 25,
+                pageName: 'logsPage'
+            );
 
         return view('livewire.teacher-gpt-insights-page', compact('users', 'chatLogs', 'chatTokensMaxPerUserPerModelPerDay'));
     }

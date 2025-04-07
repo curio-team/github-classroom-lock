@@ -96,7 +96,7 @@
             </div>
         </div>
 
-        <table class="w-full">
+        <table class="w-full" id="chats">
             <thead>
                 <tr>
                     <th class="p-2 text-left">Datum</th>
@@ -125,7 +125,7 @@
             </tbody>
         </table>
 
-        {{ $chatLogs->links() }}
+        {{ $chatLogs->fragment('chats')->links() }}
     </x-content.section>
 
     <div wire:loading>

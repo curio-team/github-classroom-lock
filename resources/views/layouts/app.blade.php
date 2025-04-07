@@ -20,6 +20,13 @@
             window.Notyf.error(@js(session()->get('error')));
         @endif
 
+        @if(session()->has('warning'))
+            window.Notyf.open({
+                type: 'warning',
+                message: @js(session()->get('warning'))
+            });
+        @endif
+
         @if(session()->has('success'))
             window.Notyf.success(@js(session()->get('success')));
         @endif
