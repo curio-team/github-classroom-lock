@@ -2,7 +2,7 @@
     x-data="{ cheatActive: false }"
     x-on:keydown.window="if (event.altKey && event.code === 'KeyC') { cheatActive = true; }">
     <x-content.section>
-        <x-headings.page>CurioGPT Chat</x-headings.page>
+        <x-headings.section>CurioGPT Chat</x-headings.section>
         <p>
             We bieden studenten een ChatGPT-implementatie met behulp van de OpenAI API. Dit is de
             <strong>enige toegestane manier om een Large Language Model (LLM) te gebruiken.</strong>
@@ -31,7 +31,7 @@
     </x-content.section>
 
     <x-content.section>
-        <x-headings.page>GitHub Classroom Teams Vergrendelen</x-headings.page>
+        <x-headings.section>GitHub Classroom Teams Vergrendelen</x-headings.section>
 
         <p>Met de onderstaande tool kun je GitHub Classroom-teams vergrendelen om te voorkomen dat studenten wijzigingen aanbrengen in hun repositories nadat ze de examenruimte hebben verlaten.</p>
 
@@ -39,7 +39,11 @@
             <p>Het werkt door studenten als leden van hun team te verwijderen, maar houdt hun lidmaatschap bij. Op deze manier kun je later beslissen om ze weer toe te voegen.</p>
             <p>De knop 'Snapshot bijwerken' vindt alle GitHub-teams in de organisatie '{{ config('app.github_organization') }}'.</p>
         </x-content.hint>
-        <p>Daarnaast moet GitHub Projects ook los worden uitgeschakeld, dat kan via deze knoppen:</p>
+    </x-content.section>
+
+    <x-content.section>
+        <x-headings.section>GitHub Projects Vergrendelen</x-headings.section>
+        <p>Naast de Teams moet GitHub Projects ook los worden uitgeschakeld aan het eind, en ingeschakeld aan het begin van de werkdag.</p>
         <div class="flex flex-row gap-4">
             @if($isProjectsEnabled)
             <x-buttons.danger wire:click="lockProjects(true)">Vergrendel GitHub Projects</x-buttons.danger>
