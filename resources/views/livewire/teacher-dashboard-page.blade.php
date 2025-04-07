@@ -68,12 +68,12 @@
             @forelse ($teams as $team)
                 <x-content.stack-layout class="border-2 border-gray-800 p-4 rounded">
                     <div class="flex flex-row justify-between">
-                        {{-- <x-input.checkbox wire:model.live="teamIds" :value="$team->id" /> --}}
-                        <h4>{{ $team->name }}</h4>
+                        <h4 class="font-bold">{{ $team->name }}</h4>
                         <x-content.status-indicator :active="!$team->locked">
                             {{ $team->locked ? 'Locked' : 'Unlocked' }}
                         </x-content.status-indicator>
                     </div>
+                    <h5>Leden:</h5>
                     <x-content.stack-layout row wrap>
                         @forelse ($team->members as $member)
                             <x-content.stack-layout row tight class="bg-gray-100 py-2 px-4 rounded">
@@ -84,6 +84,7 @@
                                 {{ $member->login }}
                                 <x-buttons.danger
                                     x-show="cheatActive"
+                                    x-cloak
                                     class="py-1"
                                     @click="if (confirm('Weet je zeker dat je deze student uit dit team wilt verwijderen in de snapshot? Dit is handig wanneer de student al handmatig is verwijderd uit het team op GitHub.')) { $wire.removeFromTeamSnapshot('{{ $member->id }}') }"
                                     title="Verwijder deze student uit het team in de snapshot"
@@ -97,13 +98,29 @@
                             </x-content.hint>
                         @endforelse
                     </x-content.stack-layout>
+                    <h5>Project(en):</h5>
+                    <x-content.stack-layout row wrap>
+                        @forelse ($teamProjects[$team->id] as $project)
+                            <a href="{{ $project->url }}" target="_blank">
+                                <x-content.stack-layout row tight class="bg-gray-100 py-2 px-4 rounded">
+                                    {{ $project->title }}
+                                </x-content.stack-layout>
+                            </a>
+                        @empty
+                            <x-content.hint>
+                                Geen projecten gevonden. Maak ten minste het eerste project aan.
+                            </x-content.hint>
+                        @endforelse
+                        <x-buttons.secondary @click="if (confirm('Weet je zeker dat je een nieuw project wilt aanmaken voor dit team?')) { $wire.createProject('{{ $team->id }}') }">Cre&euml;er Project</x-buttons.secondary>
+                    </x-content.stack-layout>
+
                     <x-content.stack-layout row x-data="{}">
                         @if ($team->locked)
                             <x-buttons.primary wire:click="unlockTeam('{{ $team->id }}')" class="grow">Ontgrendel Team</x-buttons.primary>
                             @if ($team->is_archived)
                                 <x-buttons.secondary wire:click="unarchiveTeam('{{ $team->id }}')">De-archiveer</x-buttons.secondary>
                             @else
-                                <x-buttons.secondary wire:click="archiveTeam('{{ $team->id }}')">Archiveer</x-buttons.secondary>
+                                <x-buttons.secondary @click="if (confirm('Weet je zeker dat je dit team wilt archiveren?')) { $wire.archiveTeam('{{ $team->id }}') }">Archiveer</x-buttons.secondary>
                             @endif
                         @else
                             <x-buttons.danger wire:click="lockTeam('{{ $team->id }}')" class="grow">Vergrendel Team</x-buttons.danger>

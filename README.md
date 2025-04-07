@@ -4,6 +4,10 @@ Locks a GitHub Classroom by removing all students from their team. It keeps trac
 
 This helps us restrict access when students leave our school.
 
+## Known issues
+
+* When removing members from a team, all tasks assigned to them get unassigned.
+
 ## Getting Started
 
 1. Clone this repository
