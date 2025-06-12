@@ -100,17 +100,23 @@
                     </x-content.stack-layout>
                     <h5>Project(en):</h5>
                     <x-content.stack-layout row wrap>
-                        @forelse ($teamProjects[$team->id] as $project)
-                            <a href="{{ $project->url }}" target="_blank">
-                                <x-content.stack-layout row tight class="bg-gray-100 py-2 px-4 rounded">
-                                    {{ $project->title }}
-                                </x-content.stack-layout>
-                            </a>
-                        @empty
+                        @isset($teamProjects[$team->id])
+                            @forelse ($teamProjects[$team->id] as $project)
+                                <a href="{{ $project->url }}" target="_blank">
+                                    <x-content.stack-layout row tight class="bg-gray-100 py-2 px-4 rounded">
+                                        {{ $project->title }}
+                                    </x-content.stack-layout>
+                                </a>
+                            @empty
+                                <x-content.hint>
+                                    Geen projecten gevonden. Maak ten minste het eerste project aan.
+                                </x-content.hint>
+                            @endforelse
+                        @else
                             <x-content.hint>
                                 Geen projecten gevonden. Maak ten minste het eerste project aan.
                             </x-content.hint>
-                        @endforelse
+                        @endisset
                         <x-buttons.secondary @click="if (confirm('Weet je zeker dat je een nieuw project wilt aanmaken voor dit team?')) { $wire.requestCreateProject('{{ $team->id }}') }">Cre&euml;er Project</x-buttons.secondary>
                     </x-content.stack-layout>
 
