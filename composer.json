@@ -2,7 +2,12 @@
     "name": "curio-team/github-classroom-lock",
     "type": "project",
     "description": "Curio SD GitHub Classroom Lock",
-    "keywords": ["curio", "github", "classroom", "lock"],
+    "keywords": [
+        "curio",
+        "github",
+        "classroom",
+        "lock"
+    ],
     "license": "MIT",
     "require": {
         "php": ">8.0 <8.2",
@@ -14,8 +19,7 @@
         "laravel/tinker": "^2.7",
         "lcobucci/jwt": "4.0.4",
         "livewire/livewire": "^3.4.9",
-        "spatie/laravel-settings": "^3.2",
-        "yethee/tiktoken": "^0.3.0"
+        "spatie/laravel-settings": "^3.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

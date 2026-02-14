@@ -27,11 +27,6 @@ class ChatSettings extends Settings
     public string $model_mini;
 
     /**
-     * Whether to enable summarization for long chats.
-     */
-    public bool $summarization_enabled;
-
-    /**
      * The advanced (more expensive and thus limited) model to use.
      */
     public string $model_advanced;

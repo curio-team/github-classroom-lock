@@ -343,8 +343,7 @@
                     }
                 }
 
-                function performPrompt(onReceivedChunk, onReceivedFull, summarizeMode) {
-                    summarizeMode = summarizeMode ? true : false;
+                function performPrompt(onReceivedChunk, onReceivedFull) {
 
                     const model = document.querySelector('input[name="model"]:checked').value;
                     const aiRequestRoute = '{{ route('ai-request') }}';
@@ -361,7 +360,6 @@
                         body: JSON.stringify({
                             model: model,
                             history: filteredHistory,
-                            should_summarize_history: summarizeMode,
                         }),
                     })
                     .then(response => response.body)
@@ -369,7 +367,6 @@
                         const reader = body.pipeThrough(new TextDecoderStream()).getReader();
 
                         let currentMessage = '';
-                        let canBeSummarized = false;
 
                         while (true) {
                             const { done, value } = await reader.read();
@@ -392,7 +389,6 @@
 
                                 const parsed = JSON.parse(chunk);
                                 currentMessage += parsed.content;
-                                canBeSummarized = parsed.can_be_summarized;
 
                                 if (typeof parsed.error !== 'undefined') {
                                     console.error(parsed.error);
@@ -408,7 +404,7 @@
                         }
 
                         if (onReceivedFull) {
-                            onReceivedFull(currentMessage, canBeSummarized);
+                            onReceivedFull(currentMessage);
                         }
 
                         window.dispatchEvent(new CustomEvent('app-chat-received', {
@@ -417,7 +413,7 @@
                         }));
                     }).catch(error => {
                         console.error(error);
-                        onReceivedFull('Er is een fout opgetreden bij het ophalen van het bericht.', false);
+                        onReceivedFull('Er is een fout opgetreden bij het ophalen van het bericht.');
                         setFormDisabled(false);
                         window.dispatchEvent(new CustomEvent('app-chat-received', {
                             bubbles: true,
@@ -468,30 +464,9 @@
                             span.classList.remove('opacity-0');
                         }, 1);
                         chatScrollToBottom();
-                    }, function(currentMessage, canBeSummarized) {
+                    }, function(currentMessage) {
                         messageTextEl.innerHTML = marked.parse(currentMessage);
                         history[historyLength - 1].content = currentMessage;
-
-                        if (canBeSummarized) {
-                            const summarizeButton = document.createElement('button');
-                            summarizeButton.classList.add('text-xs', 'text-slate-400', 'hover:text-slate-600', 'cursor-pointer');
-                            summarizeButton.innerText = '» Vervang gehele chatgeschiedenis met samenvatting';
-                            summarizeButton.addEventListener('click', function() {
-                                setFormDisabled(true);
-                                chatHistory.innerHTML = '';
-                                addMessage('Bezig met samenvatten...', 'system');
-                                performPrompt(undefined, function(currentMessage) {
-                                    // Set the history to the summarized message
-                                    history.length = 0;
-                                    chatHistory.innerHTML = '';
-                                    addMessage(currentMessage, 'system');
-                                    chatScrollToBottom();
-                                    setFormDisabled(false);
-                                }, true);
-                            });
-
-                            messageTextEl.appendChild(summarizeButton);
-                        }
 
                         setFormDisabled(false);
                         chatScrollToBottom();
