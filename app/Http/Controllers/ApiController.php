@@ -49,9 +49,9 @@ class ApiController extends Controller
 
         $history = $request->input('history');
 
-        // Inject the system prompt before all messages
+        // Inject the developer prompt before all messages
         array_unshift($history, [
-            'role' => 'system',
+            'role' => 'developer',
             'content' => "Je bent een behulpzame assistent genaamd 'CurioGPT' die helpt met vragen over Software Development.",
         ]);
 
@@ -73,16 +73,15 @@ class ApiController extends Controller
             ]);
 
             try {
-                $apiResponse = $client->post('https://api.openai.com/v1/chat/completions', [
+                $apiResponse = $client->post('https://api.openai.com/v1/responses', [
                     'headers' => [
                         'Authorization' => 'Bearer ' . $apiKey,
                         'Content-Type' => 'application/json',
                     ],
                     'json' => [
                         'model' => $model,
-                        'messages' => $history,
+                        'input' => $history,
                         'stream' => true,
-                        'temperature' => 0 // Very low temperature to make the model more deterministic
                     ],
                 ]);
 
@@ -93,25 +92,38 @@ class ApiController extends Controller
                 $partialChunk = '';
                 $tokenCount = 0;
 
-                // Stream the response through and process chunks
+                // Stream the response through and process events
                 while (!$body->eof()) {
                     $chunk = $body->read(1024);
                     $text = $partialChunk . $chunk;
-                    $chunks = explode("\n", $text);
+                    $lines = explode("\n", $text);
 
-                    for ($i = 0; $i < count($chunks) - 1; $i++) {
-                        if (trim($chunks[$i]) !== '') {
-                            $tokenCount++;
+                    for ($i = 0; $i < count($lines) - 1; $i++) {
+                        $line = trim($lines[$i]);
 
-                            if (strpos($chunks[$i], 'data: ') === 0) {
-                                $dataChunk = json_decode(substr($chunks[$i], 6), true);
+                        if ($line === '' || strpos($line, 'event:') === 0) {
+                            continue;
+                        }
 
-                                if (isset($dataChunk['choices'][0]['delta']['content'])) {
-                                    $content = $dataChunk['choices'][0]['delta']['content'];
+                        if (strpos($line, 'data: ') === 0) {
+                            $jsonData = substr($line, 6);
 
-                                    if ($dataChunk['choices'][0]['finish_reason'] == 'stop') {
-                                        break;
-                                    }
+                            if ($jsonData === '[DONE]') {
+                                break;
+                            }
+
+                            $event = json_decode($jsonData, true);
+
+                            if (!$event || !isset($event['type'])) {
+                                continue;
+                            }
+
+                            // Handle text delta events
+                            if ($event['type'] === 'response.output_text.delta') {
+                                $tokenCount++;
+
+                                if (isset($event['delta'])) {
+                                    $content = $event['delta'];
 
                                     echo json_encode([
                                         'content' => $content,
@@ -123,11 +135,20 @@ class ApiController extends Controller
                                     @flush();
                                 }
                             }
+                            // Handle error events
+                            else if ($event['type'] === 'error') {
+                                echo json_encode([
+                                    'content' => 'Er is een fout opgetreden tijdens het verwerken van je vraag.',
+                                    'error' => $event['error']['message'] ?? 'Unknown error',
+                                ]) . "\n\n";
+                                @flush();
+                                break;
+                            }
                         }
                     }
 
                     // Prepare the partial chunk for the next iteration
-                    $partialChunk = $chunks[count($chunks) - 1];
+                    $partialChunk = $lines[count($lines) - 1];
                 }
 
                 user()->registerChatWithModel($modelId, $tokenCount, $promptMessage['content'], $fullResponse);
