@@ -56,13 +56,23 @@ class User extends Authenticatable
      */
     public function getChatLimits(): array
     {
+        $settings = app(\App\Settings\ChatSettings::class);
+        $allLimits = $settings->getAllMaxUserChatTokensPerModelPerDay();
+
         if ($this->chat_limits_reset === null || $this->chat_limits_reset->isPast()) {
-            $this->chats_remaining = ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay();
+            $this->chats_remaining = $allLimits;
             $this->chat_limits_reset = now()->endOfDay();
             $this->save();
         }
 
-        $remainingChats = $this->chats_remaining ?? ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay();
+        $remainingChats = $this->chats_remaining ?? $allLimits;
+
+        // Ensure newly added models are included for existing users
+        foreach ($allLimits as $model => $limit) {
+            if (!array_key_exists($model, $remainingChats)) {
+                $remainingChats[$model] = $limit;
+            }
+        }
 
         // Sort so the lowest limit model is first
         asort($remainingChats);
@@ -76,6 +86,10 @@ class User extends Authenticatable
     public function canChatWithModel(string $model): bool
     {
         $chatsRemaining = $this->getChatLimits();
+
+        if (!array_key_exists($model, $chatsRemaining)) {
+            return false;
+        }
 
         if ($chatsRemaining[$model] === -1) {
             return true;
@@ -97,7 +111,7 @@ class User extends Authenticatable
             'response' => $response,
         ]));
 
-        if ($chatsRemaining[$model] === -1) {
+        if (!array_key_exists($model, $chatsRemaining) || $chatsRemaining[$model] === -1) {
             return;
         }
 

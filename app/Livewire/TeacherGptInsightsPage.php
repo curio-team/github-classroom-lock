@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Http\Controllers\ApiController;
 use Livewire\Attributes\Url;
 use App\Models\ChatLog;
 use App\Models\User;
@@ -17,13 +16,15 @@ class TeacherGptInsightsPage extends Component
     #[Url]
     public $searchUser = '';
 
-    public $models;
+    public $models = [];
+
+    public function mount(ChatSettings $settings)
+    {
+        $this->models = $settings->models;
+    }
 
     public function render(ChatSettings $settings)
     {
-        // crc32 the keys to prevent issues with . in the key, leaves the values as is
-        $this->models = collect(ApiController::getModelIds())->mapWithKeys(fn($value, $key) => [crc32($key) => $value]);
-
         $users = User::where('name', 'like', '%' . $this->searchUser . '%')
             ->orWhere('email', 'like', '%' . $this->searchUser . '%')
             ->latest()
@@ -32,7 +33,7 @@ class TeacherGptInsightsPage extends Component
                 pageName: 'usersPage'
             );
 
-        $chatTokensMaxPerUserPerModelPerDay = $settings->max_user_chat_tokens_per_model_per_day;
+        $chatTokensMaxPerUserPerModelPerDay = $settings->getAllMaxUserChatTokensPerModelPerDay();
 
         $chatLogs = ChatLog::where('prompt', 'like', '%' . $this->search . '%')
             ->latest()
@@ -46,7 +47,7 @@ class TeacherGptInsightsPage extends Component
 
     public function resetTokens(User $user, ChatSettings $settings)
     {
-        $user->chats_remaining = $settings->max_user_chat_tokens_per_model_per_day;
+        $user->chats_remaining = $settings->getAllMaxUserChatTokensPerModelPerDay();
         $user->chat_limits_reset = now();
         $user->save();
 
@@ -63,10 +64,27 @@ class TeacherGptInsightsPage extends Component
         $this->dispatch('all-tokens-halved');
     }
 
+    public function addModel()
+    {
+        $this->models[] = ['name' => '', 'model_id' => '', 'token_limit' => -1];
+    }
+
+    public function removeModel(int $index)
+    {
+        array_splice($this->models, $index, 1);
+    }
+
     public function saveModels(ChatSettings $settings)
     {
-        $settings->model_mini = $this->models[crc32('mini')];
-        $settings->model_advanced = $this->models[crc32('advanced')];
+        $this->validate([
+            'models.*.name'        => 'required|string|max:64',
+            'models.*.model_id'    => 'required|string|max:128',
+            'models.*.token_limit' => 'required|integer|min:-1',
+        ]);
+
+        $settings->models = array_values($this->models);
         $settings->save();
+
+        $this->dispatch('models-saved');
     }
 }
