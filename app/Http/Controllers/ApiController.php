@@ -14,10 +14,16 @@ class ApiController extends Controller
     {
         $settings = app(ChatSettings::class);
 
-        return [
+        $models = [
             'mini' => $settings->model_mini,
             'advanced' => $settings->model_advanced,
         ];
+
+        foreach ($settings->additional_models as $model) {
+            $models[$model['name']] = $model['model_id'];
+        }
+
+        return $models;
     }
 
 

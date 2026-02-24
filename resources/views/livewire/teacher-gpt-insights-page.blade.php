@@ -25,6 +25,67 @@
     </x-content.section>
 
     <x-content.section>
+        <x-headings.page>Extra modellen beheren</x-headings.page>
+        <p class="mb-4">Voeg hier extra modellen toe die studenten kunnen selecteren in CurioGPT. Vul de exacte model-ID in (zoals <code>gpt-4o</code>) en het maximale aantal tokens per dag (<code>-1</code> voor onbeperkt).</p>
+
+        <div class="flex flex-col gap-3">
+            @forelse ($additionalModels as $index => $additionalModel)
+                <div class="flex flex-row gap-2 items-end border border-slate-300 rounded p-3 bg-slate-50">
+                    <div class="flex flex-col gap-1 flex-1">
+                        <label class="text-xs font-semibold">Weergavenaam</label>
+                        <input type="text"
+                            wire:model="additionalModels.{{ $index }}.name"
+                            placeholder="bijv. gpt-4.5"
+                            class="border border-slate-300 rounded px-2 py-1 text-sm" />
+                        @error("additionalModels.$index.name") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="flex flex-col gap-1 flex-1">
+                        <label class="text-xs font-semibold">Model-ID (OpenAI)</label>
+                        <input type="text"
+                            wire:model="additionalModels.{{ $index }}.model_id"
+                            placeholder="bijv. gpt-4.5-preview"
+                            class="border border-slate-300 rounded px-2 py-1 text-sm" />
+                        @error("additionalModels.$index.model_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="flex flex-col gap-1 w-32">
+                        <label class="text-xs font-semibold">Token limiet/dag</label>
+                        <input type="number"
+                            wire:model="additionalModels.{{ $index }}.token_limit"
+                            placeholder="-1"
+                            class="border border-slate-300 rounded px-2 py-1 text-sm" />
+                        @error("additionalModels.$index.token_limit") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <x-buttons.danger wire:click="removeAdditionalModel({{ $index }})">
+                        Verwijderen
+                    </x-buttons.danger>
+                </div>
+            @empty
+                <p class="text-slate-500 italic">Nog geen extra modellen toegevoegd.</p>
+            @endforelse
+        </div>
+
+        <div class="flex flex-row gap-2 mt-4">
+            <x-buttons.secondary wire:click="addAdditionalModel">
+                + Model toevoegen
+            </x-buttons.secondary>
+            <x-buttons.primary wire:click="saveAdditionalModels">
+                Opslaan
+            </x-buttons.primary>
+        </div>
+
+        <div x-data="{ open: false }" x-on:additional-models-saved.window="open = true">
+            <div x-show="open" class="fixed inset-0 bg-gray-800 bg-opacity-90 grid place-items-center justify-center text-white">
+                <div class="flex flex-col items-center gap-2 rounded bg-gray-800 p-8 shadow">
+                    <div class="text-2xl">Extra modellen opgeslagen</div>
+                    <div class="flex flex-row gap-2 mt-8">
+                        <x-buttons.secondary x-on:click="open = false">Sluiten</x-buttons.secondary>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </x-content.section>
+
+    <x-content.section>
         <div class="flex flex-row justify-between items-center">
             <x-headings.page>Gebruikers</x-headings.page>
             <div>

@@ -19,6 +19,13 @@ class TeacherGptInsightsPage extends Component
 
     public $models;
 
+    public $additionalModels = [];
+
+    public function mount(ChatSettings $settings)
+    {
+        $this->additionalModels = $settings->additional_models;
+    }
+
     public function render(ChatSettings $settings)
     {
         // crc32 the keys to prevent issues with . in the key, leaves the values as is
@@ -32,7 +39,7 @@ class TeacherGptInsightsPage extends Component
                 pageName: 'usersPage'
             );
 
-        $chatTokensMaxPerUserPerModelPerDay = $settings->max_user_chat_tokens_per_model_per_day;
+        $chatTokensMaxPerUserPerModelPerDay = $settings->getAllMaxUserChatTokensPerModelPerDay();
 
         $chatLogs = ChatLog::where('prompt', 'like', '%' . $this->search . '%')
             ->latest()
@@ -46,7 +53,7 @@ class TeacherGptInsightsPage extends Component
 
     public function resetTokens(User $user, ChatSettings $settings)
     {
-        $user->chats_remaining = $settings->max_user_chat_tokens_per_model_per_day;
+        $user->chats_remaining = $settings->getAllMaxUserChatTokensPerModelPerDay();
         $user->chat_limits_reset = now();
         $user->save();
 
@@ -68,5 +75,29 @@ class TeacherGptInsightsPage extends Component
         $settings->model_mini = $this->models[crc32('mini')];
         $settings->model_advanced = $this->models[crc32('advanced')];
         $settings->save();
+    }
+
+    public function addAdditionalModel()
+    {
+        $this->additionalModels[] = ['name' => '', 'model_id' => '', 'token_limit' => -1];
+    }
+
+    public function removeAdditionalModel(int $index)
+    {
+        array_splice($this->additionalModels, $index, 1);
+    }
+
+    public function saveAdditionalModels(ChatSettings $settings)
+    {
+        $this->validate([
+            'additionalModels.*.name' => 'required|string|max:64',
+            'additionalModels.*.model_id' => 'required|string|max:128',
+            'additionalModels.*.token_limit' => 'required|integer|min:-1',
+        ]);
+
+        $settings->additional_models = array_values($this->additionalModels);
+        $settings->save();
+
+        $this->dispatch('additional-models-saved');
     }
 }

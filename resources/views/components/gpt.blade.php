@@ -31,14 +31,14 @@
                             class="flex flex-col border border-slate-400 rounded">
                 <div class="flex flex-row border-b border-slate-400">
                     @php
-                    $defaultMaxChats = \App\Settings\ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay()
+                    $allModelMaxChats = app(\App\Settings\ChatSettings::class)->getAllMaxUserChatTokensPerModelPerDay();
                     @endphp
 
                     @foreach (user()->getChatLimits() as $model => $limit)
-                    @if(!isset($defaultMaxChats[$model]))
+                    @if(!isset($allModelMaxChats[$model]))
                         @continue
                     @endif
-                    @php $modelMaxChats = $defaultMaxChats[$model] @endphp
+                    @php $modelMaxChats = $allModelMaxChats[$model] @endphp
                     <label for="model-{{ $model }}"
                         class="flex-1 flex flex-col items-center bg-slate-200 p-4 border-l @if ($loop->first) rounded-tl @endif border-slate-400 @if ($modelMaxChats === -1 || $limit > 0) hover:bg-slate-300 cursor-pointer @else opacity-50 cursor-not-allowed @endif">
                         <div class="flex-1 flex flex-row items-center gap-2">

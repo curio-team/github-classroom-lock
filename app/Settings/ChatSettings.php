@@ -31,6 +31,12 @@ class ChatSettings extends Settings
      */
     public string $model_advanced;
 
+    /**
+     * Additional models that can be selected by users.
+     * Each entry is an array with keys: name, model_id, token_limit.
+     */
+    public array $additional_models;
+
     public static function group(): string
     {
         return 'chat';
@@ -42,5 +48,19 @@ class ChatSettings extends Settings
             'advanced' => 46300,
             'mini' => -1,
         ];
+    }
+
+    /**
+     * Returns the max tokens per model per day for all models (built-in + additional).
+     */
+    public function getAllMaxUserChatTokensPerModelPerDay(): array
+    {
+        $limits = $this->max_user_chat_tokens_per_model_per_day;
+
+        foreach ($this->additional_models as $model) {
+            $limits[$model['name']] = (int) $model['token_limit'];
+        }
+
+        return $limits;
     }
 }
