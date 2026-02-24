@@ -15,7 +15,7 @@ return new class extends SettingsMigration
             [
                 'name' => 'gpt-5.1',
                 'model_id' => 'gpt-5.1',
-                'token_limit' => -1
+                'token_limit' => 46300
             ],
             [
                 'name' => 'gpt-4o-mini',

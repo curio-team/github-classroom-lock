@@ -28,55 +28,71 @@
                             id="chat-section"
                             x-bind:class="{ 'h-full': maximized, 'h-[600px]': !maximized }"
                             class="flex flex-col border border-slate-400 rounded">
-                <div class="flex flex-row border-b border-slate-400">
-                    @php
-                    $allModelMaxChats = app(\App\Settings\ChatSettings::class)->getAllMaxUserChatTokensPerModelPerDay();
-                    @endphp
+                @php
+                $allModelMaxChats = app(\App\Settings\ChatSettings::class)->getAllMaxUserChatTokensPerModelPerDay();
+                $chatLimits = user()->getChatLimits();
+                $firstModel = collect($chatLimits)->keys()->first(fn($m) => isset($allModelMaxChats[$m]));
+                @endphp
+                <div x-data="{ selectedModel: '{{ $firstModel }}' }"
+                     class="flex flex-col border-b border-slate-400 bg-slate-200 rounded-t">
+                    <div class="flex flex-row items-center gap-3 p-3">
+                        <label for="model-select" class="text-sm font-medium whitespace-nowrap">Model:</label>
+                        <select name="model"
+                                id="model-select"
+                                @change="selectedModel = $event.target.value"
+                                class="flex-1 border border-slate-400 rounded px-2 py-1.5 bg-white text-black text-sm">
+                            @foreach ($chatLimits as $model => $limit)
+                            @if(!isset($allModelMaxChats[$model]))
+                                @continue
+                            @endif
+                            @php $modelMaxChats = $allModelMaxChats[$model] @endphp
+                            <option value="{{ $model }}"
+                                    @if ($modelMaxChats !== -1 && $limit <= 0) disabled @endif>
+                                {{ $model }}
+                                @if ($modelMaxChats === -1)
+                                    {{-- &middot; Onbeperkt --}}
+                                @elseif ($modelMaxChats > 0)
+                                    &middot; {{ $limit }} tokens over vandaag
+                                @elseif ($limit <= 0)
+                                    &middot; Geen tokens meer vandaag
+                                @endif
+                            </option>
+                            @endforeach
+                        </select>
 
-                    @foreach (user()->getChatLimits() as $model => $limit)
+                        <button class="flex-shrink text-center rounded bg-white border border-slate-400 p-1.5 text-black hover:bg-slate-100 cursor-pointer"
+                                type="button"
+                                title="Maximize chat"
+                                aria-label="Maximize chat"
+                                @click="maximized = !maximized">
+                            <x-icons.maximize x-show="!maximized" />
+                            <x-icons.minimize x-show="maximized" />
+                        </button>
+                    </div>
+
+                    {{-- Per-model token progress bars, only the selected one is shown --}}
+                    @foreach ($chatLimits as $model => $limit)
                     @if(!isset($allModelMaxChats[$model]))
                         @continue
                     @endif
                     @php $modelMaxChats = $allModelMaxChats[$model] @endphp
-                    <label for="model-{{ $model }}"
-                        class="flex-1 flex flex-col items-center bg-slate-200 p-4 border-l @if ($loop->first) rounded-tl @endif border-slate-400 @if ($modelMaxChats === -1 || $limit > 0) hover:bg-slate-300 cursor-pointer @else opacity-50 cursor-not-allowed @endif">
-                        <div class="flex-1 flex flex-row items-center gap-2">
-                            <input type="radio"
-                                name="model"
-                                @if ($modelMaxChats !== -1 && $limit <= 0) disabled @endif
-                                value="{{ $model }}"
-                                id="model-{{ $model }}"
-                                {{ $loop->first ? 'checked' : '' }}>
-                            {{ $model }}
-                            <small>
-                                ({{ App\Http\Controllers\ApiController::getModelId($model) }})
-                            </small>
-                        </div>
-                        @if ($modelMaxChats === -1)
-                            <span class="text-xs">Onbeperkt aantal tokens, zolang de voorraad strekt</span>
-                        @else
-                            @if($limit > 0)
+                    <div x-show="selectedModel === '{{ $model }}'"
+                         class="px-3">
+                        @if ($modelMaxChats > -1)
+                            @if ($limit > 0)
                                 <x-progress-bar :value="$limit"
                                                 :max="$modelMaxChats"
                                                 hideMaxLabel
                                                 id="chat-limit-{{ $model }}"
-                                                class="flex-1 mt-2">
-                                                tokens over vandaag
+                                                class="w-full mb-3">
+                                    tokens over vandaag
                                 </x-progress-bar>
                             @else
-                                <span class="text-xs">Geen tokens meer over vandaag</span>
+                                <span class="text-xs text-red-600">Geen tokens meer over vandaag</span>
                             @endif
                         @endif
-                    </label>
+                    </div>
                     @endforeach
-                    <button class="flex-shrink text-center rounded-tr bg-slate-200 p-4 text-black border-l border-slate-400 hover:bg-slate-300 cursor-pointer"
-                            type="button"
-                            title="Maximize chat"
-                            aria-label="Maximize chat"
-                            @click="maximized = !maximized">
-                        <x-icons.maximize x-show="!maximized" />
-                        <x-icons.minimize x-show="maximized" />
-                    </button>
                 </div>
 
                 <div class="flex flex-col overflow-y-scroll gap-2 flex-1 bg-slate-300 p-5">
@@ -344,7 +360,7 @@
 
                 function performPrompt(onReceivedChunk, onReceivedFull) {
 
-                    const model = document.querySelector('input[name="model"]:checked').value;
+                    const model = document.querySelector('select[name="model"]').value;
                     const aiRequestRoute = '{{ route('ai-request') }}';
                     const csrfToken = csrfEl.getAttribute('content');
                     let filteredHistory = history.slice(0, -1); // Remove the last message, which is the '...' loading message;
