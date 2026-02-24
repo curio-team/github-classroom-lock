@@ -14,12 +14,9 @@ class ApiController extends Controller
     {
         $settings = app(ChatSettings::class);
 
-        $models = [
-            'mini' => $settings->model_mini,
-            'advanced' => $settings->model_advanced,
-        ];
+        $models = [];
 
-        foreach ($settings->additional_models as $model) {
+        foreach ($settings->models as $model) {
             $models[$model['name']] = $model['model_id'];
         }
 
@@ -31,7 +28,17 @@ class ApiController extends Controller
     {
         $models = self::getModelIds();
 
-        return isset($models[$modelId]) ? $models[$modelId] : $models['mini'];
+        if (isset($models[$modelId])) {
+            return $models[$modelId];
+        }
+
+        // Fall back to the first configured model
+        if (empty($models)) {
+            \Log::warning('CurioGPT: no models configured, falling back to raw model ID.', ['model_id' => $modelId]);
+            return $modelId;
+        }
+
+        return reset($models);
     }
 
     private function fakeAnswerString(string $answer)

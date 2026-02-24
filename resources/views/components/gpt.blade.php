@@ -12,8 +12,7 @@
         </x-notice>
 
         <x-notice icon="🤖">
-            Het &quot;advanced&quot; model is duurder, vandaar dat er een beperkt aantal tokens per dag beschikbaar is per gebruiker.
-            Gebruik voornamelijk het mini model en schakel alleen over naar het geavanceerde wanneer dat nodig blijkt.
+            Sommige modellen hebben een beperkt aantal tokens per dag per gebruiker. Kies het model dat het best bij je vraag past.
         </x-notice>
 
         <x-notice type="warning" icon="🧹">

@@ -2,7 +2,6 @@
 
 namespace App\Livewire;
 
-use App\Http\Controllers\ApiController;
 use Livewire\Attributes\Url;
 use App\Models\ChatLog;
 use App\Models\User;
@@ -17,20 +16,15 @@ class TeacherGptInsightsPage extends Component
     #[Url]
     public $searchUser = '';
 
-    public $models;
-
-    public $additionalModels = [];
+    public $models = [];
 
     public function mount(ChatSettings $settings)
     {
-        $this->additionalModels = $settings->additional_models;
+        $this->models = $settings->models;
     }
 
     public function render(ChatSettings $settings)
     {
-        // crc32 the keys to prevent issues with . in the key, leaves the values as is
-        $this->models = collect(ApiController::getModelIds())->mapWithKeys(fn($value, $key) => [crc32($key) => $value]);
-
         $users = User::where('name', 'like', '%' . $this->searchUser . '%')
             ->orWhere('email', 'like', '%' . $this->searchUser . '%')
             ->latest()
@@ -70,34 +64,27 @@ class TeacherGptInsightsPage extends Component
         $this->dispatch('all-tokens-halved');
     }
 
+    public function addModel()
+    {
+        $this->models[] = ['name' => '', 'model_id' => '', 'token_limit' => -1];
+    }
+
+    public function removeModel(int $index)
+    {
+        array_splice($this->models, $index, 1);
+    }
+
     public function saveModels(ChatSettings $settings)
     {
-        $settings->model_mini = $this->models[crc32('mini')];
-        $settings->model_advanced = $this->models[crc32('advanced')];
-        $settings->save();
-    }
-
-    public function addAdditionalModel()
-    {
-        $this->additionalModels[] = ['name' => '', 'model_id' => '', 'token_limit' => -1];
-    }
-
-    public function removeAdditionalModel(int $index)
-    {
-        array_splice($this->additionalModels, $index, 1);
-    }
-
-    public function saveAdditionalModels(ChatSettings $settings)
-    {
         $this->validate([
-            'additionalModels.*.name' => 'required|string|max:64',
-            'additionalModels.*.model_id' => 'required|string|max:128',
-            'additionalModels.*.token_limit' => 'required|integer|min:-1',
+            'models.*.name'        => 'required|string|max:64',
+            'models.*.model_id'    => 'required|string|max:128',
+            'models.*.token_limit' => 'required|integer|min:-1',
         ]);
 
-        $settings->additional_models = array_values($this->additionalModels);
+        $settings->models = array_values($this->models);
         $settings->save();
 
-        $this->dispatch('additional-models-saved');
+        $this->dispatch('models-saved');
     }
 }

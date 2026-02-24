@@ -22,20 +22,10 @@ class ChatSettings extends Settings
     public array $max_user_chat_tokens_per_model_per_day;
 
     /**
-     * The low-cost model to use.
-     */
-    public string $model_mini;
-
-    /**
-     * The advanced (more expensive and thus limited) model to use.
-     */
-    public string $model_advanced;
-
-    /**
-     * Additional models that can be selected by users.
+     * The list of available models teachers have configured.
      * Each entry is an array with keys: name, model_id, token_limit.
      */
-    public array $additional_models;
+    public array $models;
 
     public static function group(): string
     {
@@ -51,13 +41,24 @@ class ChatSettings extends Settings
     }
 
     /**
-     * Returns the max tokens per model per day for all models (built-in + additional).
+     * Returns the default models list used during initial settings setup.
+     */
+    public static function getDefaultModels(): array
+    {
+        return [
+            ['name' => 'mini', 'model_id' => 'gpt-4o-mini', 'token_limit' => -1],
+            ['name' => 'advanced', 'model_id' => 'gpt-4o', 'token_limit' => 46300],
+        ];
+    }
+
+    /**
+     * Returns the max tokens per model per day for all configured models.
      */
     public function getAllMaxUserChatTokensPerModelPerDay(): array
     {
-        $limits = $this->max_user_chat_tokens_per_model_per_day;
+        $limits = [];
 
-        foreach ($this->additional_models as $model) {
+        foreach ($this->models as $model) {
             $limits[$model['name']] = (int) $model['token_limit'];
         }
 

@@ -2,81 +2,60 @@
     x-data="{ cheatActive: false }"
     x-on:keydown.window="if (event.altKey && event.code === 'KeyC') { cheatActive = true; }">
     <x-content.section>
-        <x-headings.page>CurioGPT Chat Tokens</x-headings.page>
-        <p>Per student, per dag, zijn de volgende hoeveelheid <x-buttons.link href="https://platform.openai.com/tokenizer" target="blank">tokens</x-buttons.link> beschikbaar:</p>
-        <ul class="list-disc list-inside">
-            @foreach ($chatTokensMaxPerUserPerModelPerDay as $model => $modelChatTokensMax)
-                <li class="mt-2">
-                    <strong>{{ $model }}:</strong> @if($modelChatTokensMax > -1) {{ $modelChatTokensMax }} tokens @else Onbeperkt @endif
-                    <input type="text"
-                        wire:model="models.{{ crc32($model) }}"
-                        x-bind:disabled="!cheatActive" >
-                </li>
-            @endforeach
-        </ul>
-
-        <x-buttons.primary wire:click="saveModels"
-            x-cloak
-            x-show="cheatActive">
-            Opslaan
-        </x-buttons.primary>
-
-        <p class="italic">Studenten vinden hun beschikbare hoeveelheid tokens aangeduid bij het relevante model.</p>
-    </x-content.section>
-
-    <x-content.section>
-        <x-headings.page>Extra modellen beheren</x-headings.page>
-        <p class="mb-4">Voeg hier extra modellen toe die studenten kunnen selecteren in CurioGPT. Vul de exacte model-ID in (zoals <code>gpt-4o</code>) en het maximale aantal tokens per dag (<code>-1</code> voor onbeperkt).</p>
+        <x-headings.page>CurioGPT Modellen</x-headings.page>
+        <p class="mb-4">Hier kun je de beschikbare modellen beheren die studenten kunnen selecteren in CurioGPT. Vul de exacte model-ID in (zoals <code>gpt-4o</code>) en het maximale aantal tokens per dag (<code>-1</code> voor onbeperkt).</p>
 
         <div class="flex flex-col gap-3">
-            @forelse ($additionalModels as $index => $additionalModel)
+            @forelse ($models as $index => $model)
                 <div class="flex flex-row gap-2 items-end border border-slate-300 rounded p-3 bg-slate-50">
                     <div class="flex flex-col gap-1 flex-1">
                         <label class="text-xs font-semibold">Weergavenaam</label>
                         <input type="text"
-                            wire:model="additionalModels.{{ $index }}.name"
-                            placeholder="bijv. gpt-4.5"
+                            wire:model="models.{{ $index }}.name"
+                            placeholder="bijv. mini"
                             class="border border-slate-300 rounded px-2 py-1 text-sm" />
-                        @error("additionalModels.$index.name") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        @error("models.$index.name") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="flex flex-col gap-1 flex-1">
                         <label class="text-xs font-semibold">Model-ID (OpenAI)</label>
                         <input type="text"
-                            wire:model="additionalModels.{{ $index }}.model_id"
-                            placeholder="bijv. gpt-4.5-preview"
+                            wire:model="models.{{ $index }}.model_id"
+                            placeholder="bijv. gpt-4o-mini"
                             class="border border-slate-300 rounded px-2 py-1 text-sm" />
-                        @error("additionalModels.$index.model_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        @error("models.$index.model_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
-                    <div class="flex flex-col gap-1 w-32">
-                        <label class="text-xs font-semibold">Token limiet/dag</label>
+                    <div class="flex flex-col gap-1 w-36">
+                        <label class="text-xs font-semibold">Token limiet/dag <span class="font-normal text-slate-500">(-1 = onbeperkt)</span></label>
                         <input type="number"
-                            wire:model="additionalModels.{{ $index }}.token_limit"
+                            wire:model="models.{{ $index }}.token_limit"
                             placeholder="-1"
                             class="border border-slate-300 rounded px-2 py-1 text-sm" />
-                        @error("additionalModels.$index.token_limit") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        @error("models.$index.token_limit") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
-                    <x-buttons.danger wire:click="removeAdditionalModel({{ $index }})">
+                    <x-buttons.danger wire:click="removeModel({{ $index }})">
                         Verwijderen
                     </x-buttons.danger>
                 </div>
             @empty
-                <p class="text-slate-500 italic">Nog geen extra modellen toegevoegd.</p>
+                <p class="text-slate-500 italic">Nog geen modellen geconfigureerd.</p>
             @endforelse
         </div>
 
         <div class="flex flex-row gap-2 mt-4">
-            <x-buttons.secondary wire:click="addAdditionalModel">
+            <x-buttons.secondary wire:click="addModel">
                 + Model toevoegen
             </x-buttons.secondary>
-            <x-buttons.primary wire:click="saveAdditionalModels">
+            <x-buttons.primary wire:click="saveModels">
                 Opslaan
             </x-buttons.primary>
         </div>
 
-        <div x-data="{ open: false }" x-on:additional-models-saved.window="open = true">
+        <p class="italic mt-4">Studenten vinden hun beschikbare hoeveelheid tokens aangeduid bij het relevante model.</p>
+
+        <div x-data="{ open: false }" x-on:models-saved.window="open = true">
             <div x-show="open" class="fixed inset-0 bg-gray-800 bg-opacity-90 grid place-items-center justify-center text-white">
                 <div class="flex flex-col items-center gap-2 rounded bg-gray-800 p-8 shadow">
-                    <div class="text-2xl">Extra modellen opgeslagen</div>
+                    <div class="text-2xl">Modellen opgeslagen</div>
                     <div class="flex flex-row gap-2 mt-8">
                         <x-buttons.secondary x-on:click="open = false">Sluiten</x-buttons.secondary>
                     </div>
