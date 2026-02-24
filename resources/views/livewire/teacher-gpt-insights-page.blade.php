@@ -13,7 +13,8 @@
                         <input type="text"
                             wire:model="models.{{ $index }}.name"
                             placeholder="bijv. mini"
-                            class="border border-slate-300 rounded px-2 py-1 text-sm" />
+                            x-bind:disabled="!cheatActive"
+                            class="border border-slate-300 rounded px-2 py-1 text-sm disabled:bg-slate-200 disabled:cursor-not-allowed" />
                         @error("models.$index.name") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="flex flex-col gap-1 flex-1">
@@ -21,7 +22,8 @@
                         <input type="text"
                             wire:model="models.{{ $index }}.model_id"
                             placeholder="bijv. gpt-4o-mini"
-                            class="border border-slate-300 rounded px-2 py-1 text-sm" />
+                            x-bind:disabled="!cheatActive"
+                            class="border border-slate-300 rounded px-2 py-1 text-sm disabled:bg-slate-200 disabled:cursor-not-allowed" />
                         @error("models.$index.model_id") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="flex flex-col gap-1 w-36">
@@ -29,10 +31,13 @@
                         <input type="number"
                             wire:model="models.{{ $index }}.token_limit"
                             placeholder="-1"
-                            class="border border-slate-300 rounded px-2 py-1 text-sm" />
+                            x-bind:disabled="!cheatActive"
+                            class="border border-slate-300 rounded px-2 py-1 text-sm disabled:bg-slate-200 disabled:cursor-not-allowed" />
                         @error("models.$index.token_limit") <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
-                    <x-buttons.danger wire:click="removeModel({{ $index }})">
+                    <x-buttons.danger wire:click="removeModel({{ $index }})"
+                        x-cloak
+                        x-show="cheatActive">
                         Verwijderen
                     </x-buttons.danger>
                 </div>
@@ -41,7 +46,9 @@
             @endforelse
         </div>
 
-        <div class="flex flex-row gap-2 mt-4">
+        <div class="flex flex-row gap-2 mt-4"
+            x-cloak
+            x-show="cheatActive">
             <x-buttons.secondary wire:click="addModel">
                 + Model toevoegen
             </x-buttons.secondary>
