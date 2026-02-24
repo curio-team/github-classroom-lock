@@ -1,41 +1,38 @@
 <?php
 
-use App\Settings\ChatSettings;
-use Illuminate\Support\Facades\DB;
 use Spatie\LaravelSettings\Migrations\SettingsMigration;
 
 return new class extends SettingsMigration
 {
     public function up(): void
     {
-        // Read existing model_mini / model_advanced values (JSON-encoded strings in the settings table)
-        $modelMiniPayload = DB::table('settings')->where('name', 'chat.model_mini')->value('payload');
-        $modelAdvancedPayload = DB::table('settings')->where('name', 'chat.model_advanced')->value('payload');
-
-        $modelMiniId = $modelMiniPayload ? json_decode($modelMiniPayload, true) : 'gpt-4o-mini';
-        $modelAdvancedId = $modelAdvancedPayload ? json_decode($modelAdvancedPayload, true) : 'gpt-4o';
-
-        // Read existing per-model token limits
-        $tokenLimitsPayload = DB::table('settings')
-            ->where('name', 'chat.max_user_chat_tokens_per_model_per_day')
-            ->value('payload');
-        $tokenLimits = $tokenLimitsPayload
-            ? json_decode($tokenLimitsPayload, true)
-            : ChatSettings::getDefaultMaxUserChatTokensPerModelPerDay();
-
         $models = [
-            ['name' => 'mini',     'model_id' => $modelMiniId,     'token_limit' => $tokenLimits['mini']     ?? -1],
-            ['name' => 'advanced', 'model_id' => $modelAdvancedId, 'token_limit' => $tokenLimits['advanced'] ?? 46300],
+            [
+                'name' => 'gpt-5-mini',
+                'model_id' => 'gpt-5-mini',
+                'token_limit' => -1
+            ],
+            [
+                'name' => 'gpt-5.1',
+                'model_id' => 'gpt-5.1',
+                'token_limit' => -1
+            ],
+            [
+                'name' => 'gpt-4o-mini',
+                'model_id' => 'gpt-4o-mini',
+                'token_limit' => -1
+            ],
+            [
+                'name' => 'gpt-4o',
+                'model_id' => 'gpt-4o',
+                'token_limit' => 46300
+            ],
         ];
 
         $this->migrator->add('chat.models', $models);
 
-        if ($modelMiniPayload !== null) {
-            $this->migrator->delete('chat.model_mini');
-        }
-
-        if ($modelAdvancedPayload !== null) {
-            $this->migrator->delete('chat.model_advanced');
-        }
+        // Remove the individual model settings, we now let teachers specify any amount of models in the new 'chat.models' setting.
+        $this->migrator->delete('chat.model_mini');
+        $this->migrator->delete('chat.model_advanced');
     }
 };
