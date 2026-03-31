@@ -1,7 +1,8 @@
 <x-content.main
     x-data="{ cheatActive: false }"
     x-on:keydown.window="if (event.altKey && event.code === 'KeyC') { cheatActive = true; }">
-    <x-content.section>
+    {{-- TODO: Remove after succesful migration of CurioGPT --}}
+    {{-- <x-content.section>
         <x-headings.section>CurioGPT Chat</x-headings.section>
         <p>
             We bieden studenten een ChatGPT-implementatie met behulp van de OpenAI API. Dit is de
@@ -28,6 +29,14 @@
         <x-content.hint>
             <p>CurioGPT mag alleen worden gebruikt tijdens examenuren.</p>
         </x-content.hint>
+    </x-content.section> --}}
+    <x-content.section>
+        <x-headings.section>CurioGPT Chat</x-headings.section>
+        <p>
+            CurioGPT is gemoderniseerd en heeft nu een nieuwe locatie.
+        </p>
+
+        <x-buttons.primary href="https://gpt.curio.codes" target="_blank">Ga naar gpt.curio.codes</x-buttons.primary>
     </x-content.section>
 
     <x-content.section>

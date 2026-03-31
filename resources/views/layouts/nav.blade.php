@@ -26,20 +26,22 @@
             <!-- Left Side Of Navbar -->
             <x-content.stack-layout row class="md:grow">
                 @auth
-                    <x-buttons.link
+                    {{-- TODO: Remove after succesful migration of CurioGPT --}}
+                    {{-- <x-buttons.link
                         href="{{ route('dashboard.student') }}">
                         CurioGPT
-                    </x-buttons.link>
+                    </x-buttons.link> --}}
 
                     @if (user()->isTeacher())
                         <x-buttons.link
                             href="{{ route('dashboard.teacher') }}">
                             🔒 Dashboard
                         </x-buttons.link>
-                        <x-buttons.link
+                        {{-- TODO: Remove after succesful migration of CurioGPT --}}
+                        {{-- <x-buttons.link
                             href="{{ route('dashboard.teacher-gpt') }}">
                             🔒 Overzicht CurioGPT
-                        </x-buttons.link>
+                        </x-buttons.link> --}}
                     @endif
                 @endauth
             </x-content.stack-layout>

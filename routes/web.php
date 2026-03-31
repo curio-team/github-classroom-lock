@@ -50,16 +50,19 @@ Route::middleware(['auth'])->group(function () {
         ->group(function () {
             Route::get('/dashboard', \App\Livewire\TeacherDashboardPage::class)
                 ->name('dashboard.teacher');
-            Route::get('/gpt-insights', \App\Livewire\TeacherGptInsightsPage::class)
-                ->name('dashboard.teacher-gpt');
+
+            // Remove after succesful migration of CurioGPT
+            // Route::get('/gpt-insights', \App\Livewire\TeacherGptInsightsPage::class)
+            //     ->name('dashboard.teacher-gpt');
         });
 
-    Route::prefix('student')
-        ->group(function () {
-            Route::get('/dashboard', \App\Livewire\StudentDashboardPage::class)
-                ->name('dashboard.student');
+    // Remove after succesful migration of CurioGPT
+    // Route::prefix('student')
+    //     ->group(function () {
+    //         Route::get('/dashboard', \App\Livewire\StudentDashboardPage::class)
+    //             ->name('dashboard.student');
 
-            Route::post('ai-request', [\App\Http\Controllers\ApiController::class, 'performPrompt'])
-                ->name('ai-request');
-        });
+    //         Route::post('ai-request', [\App\Http\Controllers\ApiController::class, 'performPrompt'])
+    //             ->name('ai-request');
+    //     });
 });
