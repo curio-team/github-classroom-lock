@@ -128,12 +128,33 @@ class TeacherDashboardPage extends Component
                 ->with('error', 'Team not found.');
         }
 
-        // Create the project
+        // Look up the team's repository before creating the project
         $teamName = $team->name;
+        $teamSlug = $team->slug;
+        $teamReposQuery = <<<QUERY
+        query {
+            organization(login: "$organization") {
+                team(slug: "$teamSlug") {
+                    repositories(first: 1) {
+                        nodes {
+                            id
+                        }
+                    }
+                }
+            }
+        }
+        QUERY;
+
+        $repoResult = $client->api('graphql')->execute($teamReposQuery);
+        $repoNodes = $repoResult['data']['organization']['team']['repositories']['nodes'] ?? [];
+        $repositoryId = !empty($repoNodes) ? $repoNodes[0]['id'] : null;
+
+        // Create the project, setting the default repository if available
+        $repositoryInput = $repositoryId ? ", repositoryId: \"$repositoryId\"" : '';
 
         $createProjectQuery = <<<QUERY
         mutation {
-            createProjectV2(input: {title: "$teamName", ownerId: "{$organizationId}"}) {
+            createProjectV2(input: {title: "$teamName", ownerId: "{$organizationId}"$repositoryInput}) {
                 projectV2 {
                     id
                 }
@@ -160,41 +181,6 @@ class TeacherDashboardPage extends Component
         QUERY;
 
         $result = $client->api('graphql')->execute($linkProjectQuery);
-
-        // Link the project to the team's repository (default repository)
-        $teamSlug = $team->slug;
-        $teamReposQuery = <<<QUERY
-        query {
-            organization(login: "$organization") {
-                team(slug: "$teamSlug") {
-                    repositories(first: 1) {
-                        nodes {
-                            id
-                        }
-                    }
-                }
-            }
-        }
-        QUERY;
-
-        $result = $client->api('graphql')->execute($teamReposQuery);
-        $repoNodes = $result['data']['organization']['team']['repositories']['nodes'] ?? [];
-
-        if (!empty($repoNodes)) {
-            $repositoryId = $repoNodes[0]['id'];
-            $linkRepoQuery = <<<QUERY
-            mutation {
-                linkProjectV2ToRepository(input: {
-                    projectId: "$projectId",
-                    repositoryId: "$repositoryId"
-                }) {
-                    clientMutationId
-                }
-            }
-            QUERY;
-
-            $client->api('graphql')->execute($linkRepoQuery);
-        }
     }
 
     public function requestCreateProject($teamId)

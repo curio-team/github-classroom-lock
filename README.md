@@ -28,7 +28,8 @@ This helps us restrict access when students leave our school.
 3. Select `All repositories` under 'Repository access'
 4. Give it the following permissions:
     * *(Optional) Repository permissions:*
-        * *Contents: read*
+        * Contents: read and write, for the assigning of the default repository to the project
+        * Read and Write access to administration, for assigning the projects
     * Organization permissions:
         * Members: read and write
         * Administration: read and write, for the (un)locking of Projects
@@ -39,7 +40,7 @@ This helps us restrict access when students leave our school.
 2. Copy the key and paste it in the `.env` file as `OPENAI_API_KEY`.
 3. Make sure you've prepaid some money to your OpenAI account.
 
-## Notes:
+## Notes
 
 ### cURL error 60: SSL certificate expired
 
@@ -51,10 +52,12 @@ In order for the frontend to receive the chat output immediately, you need to di
 
 > [!TIP]
 > I have no idea why, but if you can't get output buffering to stop, I found that in `/etc/apache2/conf-available/php8.1-fpm.conf`:
+>
 > ```apache
 > <FilesMatch ".+\.ph(?:ar|p|tml)$">
 > #    SetHandler "proxy:unix:/run/php/php8.1-fpm.sock|fcgi://localhost"
 > </FilesMatch>
 > ```
+>
 > You can comment the SetHandler line to simplify the setup and ensure no other settings are interfering.
 > Please open an issue if you can tell me why this works.
