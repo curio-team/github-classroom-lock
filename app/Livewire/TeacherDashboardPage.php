@@ -128,8 +128,41 @@ class TeacherDashboardPage extends Component
                 ->with('error', 'Team not found.');
         }
 
-        // Look up the team's repository before creating the project
+        // Create the project
         $teamName = $team->name;
+
+        $createProjectQuery = <<<QUERY
+        mutation {
+            createProjectV2(input: {title: "$teamName", ownerId: "{$organizationId}"}) {
+                projectV2 {
+                    id
+                }
+            }
+        }
+        QUERY;
+
+        $result = $client->api('graphql')->execute($createProjectQuery);
+
+        $projectId = $result['data']['createProjectV2']['projectV2']['id'];
+
+        // Link the project to the team
+        $linkProjectQuery = <<<QUERY
+        mutation {
+            updateProjectV2Collaborators(input: {
+                projectId: "$projectId",
+                collaborators: {
+                    teamId: "$queryTeamId",
+                    role: WRITER
+                }
+            }) {
+                clientMutationId
+            }
+        }
+        QUERY;
+
+        $client->api('graphql')->execute($linkProjectQuery);
+
+        // Link the project to the team's repository
         $teamSlug = $team->slug;
         $teamReposQuery = <<<QUERY
         query {
@@ -147,40 +180,24 @@ class TeacherDashboardPage extends Component
 
         $repoResult = $client->api('graphql')->execute($teamReposQuery);
         $repoNodes = $repoResult['data']['organization']['team']['repositories']['nodes'] ?? [];
-        $repositoryId = !empty($repoNodes) ? $repoNodes[0]['id'] : null;
 
-        // Create the project, setting the default repository if available
-        $repositoryInput = $repositoryId ? ", repositoryId: \"$repositoryId\"" : '';
-
-        $createProjectQuery = <<<QUERY
-        mutation {
-            createProjectV2(input: {title: "$teamName", ownerId: "{$organizationId}"$repositoryInput}) {
-                projectV2 {
-                    id
+        if (!empty($repoNodes)) {
+            $repositoryId = $repoNodes[0]['id'];
+            $linkRepoQuery = <<<QUERY
+            mutation {
+                linkProjectV2ToRepository(input: {
+                    projectId: "$projectId",
+                    repositoryId: "$repositoryId"
+                }) {
+                    repository {
+                        id
+                    }
                 }
             }
+            QUERY;
+
+            $client->api('graphql')->execute($linkRepoQuery);
         }
-        QUERY;
-
-        $result = $client->api('graphql')->execute($createProjectQuery);
-
-        // Link the project to the team
-        $projectId = $result['data']['createProjectV2']['projectV2']['id'];
-        $linkProjectQuery = <<<QUERY
-        mutation {
-            updateProjectV2Collaborators(input: {
-                projectId: "$projectId",
-                collaborators: {
-                    teamId: "$queryTeamId",
-                    role: WRITER
-                }
-            }) {
-                clientMutationId
-            }
-        }
-        QUERY;
-
-        $result = $client->api('graphql')->execute($linkProjectQuery);
     }
 
     public function requestCreateProject($teamId)
