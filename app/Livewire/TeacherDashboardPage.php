@@ -160,6 +160,41 @@ class TeacherDashboardPage extends Component
         QUERY;
 
         $result = $client->api('graphql')->execute($linkProjectQuery);
+
+        // Link the project to the team's repository (default repository)
+        $teamSlug = $team->slug;
+        $teamReposQuery = <<<QUERY
+        query {
+            organization(login: "$organization") {
+                team(slug: "$teamSlug") {
+                    repositories(first: 1) {
+                        nodes {
+                            id
+                        }
+                    }
+                }
+            }
+        }
+        QUERY;
+
+        $result = $client->api('graphql')->execute($teamReposQuery);
+        $repoNodes = $result['data']['organization']['team']['repositories']['nodes'] ?? [];
+
+        if (!empty($repoNodes)) {
+            $repositoryId = $repoNodes[0]['id'];
+            $linkRepoQuery = <<<QUERY
+            mutation {
+                linkProjectV2ToRepository(input: {
+                    projectId: "$projectId",
+                    repositoryId: "$repositoryId"
+                }) {
+                    clientMutationId
+                }
+            }
+            QUERY;
+
+            $client->api('graphql')->execute($linkRepoQuery);
+        }
     }
 
     public function requestCreateProject($teamId)
