@@ -41,7 +41,6 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
         'chat_limits_reset' => 'datetime',
         'chats_remaining' => 'array',
     ];
