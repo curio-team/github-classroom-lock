@@ -1,6 +1,6 @@
 <svg {{
      $attributes->class([
-        'w-100',
+        'w-full',
         'h-auto'
     ]) }}
     viewBox="0 0 935 550"
