@@ -208,16 +208,16 @@
         },
         {
             "name": "curio/sdclient",
-            "version": "v5.1.3",
+            "version": "v5.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/curio-team/sdclient.git",
-                "reference": "e76d17937bd85b3945b6a3eee424f10c6da1365c"
+                "reference": "900e1638b85cb0f8c350f698d98dd42e2cc9fbf0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/curio-team/sdclient/zipball/e76d17937bd85b3945b6a3eee424f10c6da1365c",
-                "reference": "e76d17937bd85b3945b6a3eee424f10c6da1365c",
+                "url": "https://api.github.com/repos/curio-team/sdclient/zipball/900e1638b85cb0f8c350f698d98dd42e2cc9fbf0",
+                "reference": "900e1638b85cb0f8c350f698d98dd42e2cc9fbf0",
                 "shasum": ""
             },
             "require": {
@@ -259,9 +259,10 @@
             ],
             "description": "Client for sdlogin",
             "support": {
-                "source": "https://github.com/curio-team/sdclient/tree/v5.1.3"
+                "issues": "https://github.com/curio-team/sdclient/issues",
+                "source": "https://github.com/curio-team/sdclient/tree/v5.2.0"
             },
-            "time": "2026-06-09T07:43:17+00:00"
+            "time": "2026-10-24T06:49:24+00:00"
         },
         {
             "name": "dflydev/dot-access-data",
