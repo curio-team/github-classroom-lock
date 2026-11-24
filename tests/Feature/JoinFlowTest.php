@@ -176,6 +176,34 @@ class JoinFlowTest extends TestCase
         $this->assertSame(1, $this->github->count('PATCH /user/memberships/orgs/test-org'));
     }
 
+    public function test_a_team_membership_that_lags_behind_the_accepted_invitation_is_waited_for(): void
+    {
+        [, $token] = $this->cohortWithLink();
+        $path = 'GET /orgs/test-org/teams/sd1a-2026-groep-1/memberships/alice';
+
+        // GitHub still reports the team membership as pending right after accepting.
+        $this->github->failNext($path, 200, ['state' => 'pending'], times: 2);
+
+        $this->followRedirects($this->joinAs($token, 'alice'))->assertSee('Je bent toegevoegd!');
+    }
+
+    public function test_a_team_membership_that_stays_pending_never_asks_to_accept_an_invitation_again(): void
+    {
+        [, $token] = $this->cohortWithLink();
+        $path = 'GET /orgs/test-org/teams/sd1a-2026-groep-1/memberships/alice';
+
+        $this->github->failNext($path, 200, ['state' => 'pending'], times: config('github.membership_poll.attempts') + 1);
+
+        // The invitation is already accepted: wait, don't send the student to GitHub.
+        $this->followRedirects($this->joinAs($token, 'alice'))
+            ->assertOk()
+            ->assertSee('Even geduld')
+            ->assertSee('<meta http-equiv="refresh" content="5">', false)
+            ->assertDontSee('Uitnodiging accepteren');
+
+        $this->get("/join/{$token}/status")->assertOk()->assertSee('Je bent toegevoegd!');
+    }
+
     public function test_when_automatic_acceptance_fails_the_invitation_link_is_shown(): void
     {
         [, $token] = $this->cohortWithLink();

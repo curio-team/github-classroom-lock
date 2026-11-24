@@ -163,6 +163,11 @@ class JoinService
                 if ($this->waitForActiveMembership($student) === null) {
                     return JoinResult::processing('GitHub verwerkt je uitnodiging. Ververs de pagina over een paar seconden.');
                 }
+            } elseif (($this->orgMembership($student)['state'] ?? null) === 'active') {
+                // The accept call failed, but the student is a member anyway
+                // (accepted on github.com in the meantime, or GitHub answered
+                // with an error after processing it). Nothing left to accept.
+                Audit::record('org.invitation_accepted', $student, ['status' => $response->status(), 'verified_by' => 'membership']);
             } else {
                 $reason = sprintf('Automatisch accepteren mislukt (%d: %s).', $response->status(), $response->json('message') ?? 'onbekend');
                 $student->failure_reason = $reason;
@@ -267,12 +272,23 @@ class JoinService
         $response = $this->github->org()->get($path, allow: [404]);
 
         if ($response->successful()) {
-            return $response->json('state');
+            $state = $response->json('state');
+        } else {
+            $state = $this->github->org()->put($path, ['role' => 'member'])->json('state');
+
+            Audit::record('team.member_added', $student, ['team' => $group->team_slug, 'state' => $state]);
         }
 
-        $state = $this->github->org()->put($path, ['role' => 'member'])->json('state');
+        // The student is an active organization member at this point, so a
+        // pending team membership only means GitHub hasn't finished applying
+        // the accepted invitation to the team yet. Give it a moment.
+        $attempts = max(1, config('github.membership_poll.attempts'));
 
-        Audit::record('team.member_added', $student, ['team' => $group->team_slug, 'state' => $state]);
+        for ($i = 1; $state !== 'active' && $i <= $attempts; $i++) {
+            Sleep::for(config('github.membership_poll.sleep_ms'))->milliseconds();
+
+            $state = $this->github->org()->get($path, allow: [404])->json('state') ?? $state;
+        }
 
         return $state;
     }
@@ -283,18 +299,14 @@ class JoinService
             return JoinResult::joined();
         }
 
-        // GitHub sent an invitation instead of adding the member directly.
-        $student->status = StudentStatus::Invited;
-        $student->failure_reason = 'Teamlidmaatschap staat op "pending": GitHub heeft een uitnodiging gestuurd.';
+        // Still catching up. There is no invitation left for the student to
+        // accept, so don't send them to GitHub: the status page re-checks.
+        $student->failure_reason = 'Teamlidmaatschap staat nog op "pending" bij GitHub; wordt opnieuw gecontroleerd.';
         $student->save();
 
         Audit::record('team.membership_pending', $student, ['team' => $student->group?->team_slug]);
 
-        return JoinResult::actionRequired(
-            'Accepteer de uitnodiging op GitHub en ververs daarna deze pagina.',
-            $this->github->invitationUrl(),
-            'Uitnodiging accepteren',
-        );
+        return JoinResult::processing('GitHub voegt je toe aan je groep. Deze pagina ververst vanzelf.');
     }
 
     private function removeFromPreviousTeam(Student $student, Group $current): void
