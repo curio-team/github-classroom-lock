@@ -1,5 +1,5 @@
 <nav x-data="{ openSidebar: false }" class="bg-white shadow-sm py-4 px-8">
-    <x-content.stack-layout row class="items-center justify-between max-w-4xl mx-auto">
+    <x-content.stack-layout row class="items-center justify-between max-w-6xl mx-auto">
         <a class="max-w-[100px] grow"
            href="{{ route('dashboard') }}">
             <x-logos.light-logo />
@@ -26,22 +26,10 @@
             <!-- Left Side Of Navbar -->
             <x-content.stack-layout row class="md:grow">
                 @auth
-                    {{-- TODO: Remove after succesful migration of CurioGPT --}}
-                    {{-- <x-buttons.link
-                        href="{{ route('dashboard.student') }}">
-                        CurioGPT
-                    </x-buttons.link> --}}
-
                     @if (user()->isTeacher())
-                        <x-buttons.link
-                            href="{{ route('dashboard.teacher') }}">
-                            🔒 Dashboard
-                        </x-buttons.link>
-                        {{-- TODO: Remove after succesful migration of CurioGPT --}}
-                        {{-- <x-buttons.link
-                            href="{{ route('dashboard.teacher-gpt') }}">
-                            🔒 Overzicht CurioGPT
-                        </x-buttons.link> --}}
+                        <x-buttons.link href="{{ route('exams.index') }}">Examens</x-buttons.link>
+                        <x-buttons.link href="{{ route('audit-log') }}">Auditlog</x-buttons.link>
+                        <x-buttons.link href="{{ route('dashboard.teacher') }}" class="!text-gray-400">Oude Classroom-teams</x-buttons.link>
                     @endif
                 @endauth
             </x-content.stack-layout>

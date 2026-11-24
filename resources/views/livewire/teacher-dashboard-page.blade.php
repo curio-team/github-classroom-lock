@@ -1,44 +1,6 @@
 <x-content.main
     x-data="{ cheatActive: false }"
     x-on:keydown.window="if (event.altKey && event.code === 'KeyC') { cheatActive = true; }">
-    {{-- TODO: Remove after succesful migration of CurioGPT --}}
-    {{-- <x-content.section>
-        <x-headings.section>CurioGPT Chat</x-headings.section>
-        <p>
-            We bieden studenten een ChatGPT-implementatie met behulp van de OpenAI API. Dit is de
-            <strong>enige toegestane manier om een Large Language Model (LLM) te gebruiken.</strong>
-        </p>
-
-        <p>CurioGPT wordt geleverd aan studenten zonder enige garanties. Het is mogelijk dat het niet altijd beschikbaar is. Als het niet beschikbaar is, mogen de studenten <strong>geen</strong> andere LLM gebruiken.</p>
-
-        <form class="flex flex-col gap-2 p-4 border rounded">
-            <strong>(Optioneel) Wachtwoord voor CurioGPT:</strong>
-            <div class="flex flex-row gap-2">
-                <x-inputs.text class="flex-1" wire:model="chatPassword" name="chatPassword" label="" placeholder="Wachtwoord..." />
-                <x-buttons.primary wire:click="updateChatPassword">Sla Wachtwoord Op</x-buttons.primary>
-            </div>
-            <x-content.hint>Door het wachtwoord alleen in het examenlokaal te delen, voorkomen we dat niet- examen studenten CurioGPT gebruiken.</x-content.hint>
-        </form>
-
-        @if ($isChatActive)
-            <x-buttons.danger wire:click="lockChat">Vergrendel Chat (zodat niemand erbij kan)</x-buttons.danger>
-        @else
-            <x-buttons.primary wire:click="unlockChat">Maak Chat Beschikbaar</x-buttons.primary>
-        @endif
-
-        <x-content.hint>
-            <p>CurioGPT mag alleen worden gebruikt tijdens examenuren.</p>
-        </x-content.hint>
-    </x-content.section> --}}
-    <x-content.section>
-        <x-headings.section>CurioGPT Chat</x-headings.section>
-        <p>
-            CurioGPT is gemoderniseerd en heeft nu een nieuwe locatie.
-        </p>
-
-        <x-buttons.primary href="https://gpt.curio.codes" target="_blank">Ga naar gpt.curio.codes</x-buttons.primary>
-    </x-content.section>
-
     <x-content.section>
         <x-headings.section>GitHub Classroom Teams Vergrendelen</x-headings.section>
 
@@ -46,7 +8,7 @@
 
         <x-content.hint>
             <p>Het werkt door studenten als leden van hun team te verwijderen, maar houdt hun lidmaatschap bij. Op deze manier kun je later beslissen om ze weer toe te voegen.</p>
-            <p>De knop 'Snapshot bijwerken' vindt alle GitHub-teams in de organisatie '{{ config('app.github_organization') }}'.</p>
+            <p>De knop 'Snapshot bijwerken' vindt alle GitHub-teams in de organisatie '{{ config('github.organization') }}'.</p>
         </x-content.hint>
     </x-content.section>
 

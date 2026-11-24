@@ -9,15 +9,33 @@
     </testsuite>
   </testsuites>
   <php>
-    <env name="APP_ENV" value="testing"/>
+    <env name="APP_ENV" value="testing" force="true"/>
+    <env name="APP_URL" value="http://localhost" force="true"/>
     <env name="BCRYPT_ROUNDS" value="4"/>
-    <env name="CACHE_DRIVER" value="array"/>
-    <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-    <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+    <env name="CACHE_DRIVER" value="array" force="true"/>
+    <env name="DB_CONNECTION" value="sqlite" force="true"/>
+    <env name="DB_DATABASE" value=":memory:" force="true"/>
+    <env name="LOG_CHANNEL" value="null" force="true"/>
     <env name="MAIL_MAILER" value="array"/>
-    <env name="QUEUE_CONNECTION" value="sync"/>
-    <env name="SESSION_DRIVER" value="array"/>
+    <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+    <env name="SESSION_DRIVER" value="array" force="true"/>
     <env name="TELESCOPE_ENABLED" value="false"/>
+    <!-- Never talk to the real GitHub from tests: all requests are faked (see tests/Support/FakeGitHub.php). -->
+    <env name="GITHUB_ORGANIZATION" value="test-org" force="true"/>
+    <env name="GITHUB_API_URL" value="https://api.github.test" force="true"/>
+    <env name="GITHUB_TOKEN" value="test-org-token" force="true"/>
+    <env name="GITHUB_APP_ID" value="" force="true"/>
+    <env name="GITHUB_APP_INSTALLATION_ID" value="" force="true"/>
+    <env name="GITHUB_ENTERPRISE" value="" force="true"/>
+    <env name="GITHUB_ENTERPRISE_TOKEN" value="" force="true"/>
+    <env name="GITHUB_OAUTH_CLIENT_ID" value="test-client-id" force="true"/>
+    <env name="GITHUB_OAUTH_CLIENT_SECRET" value="test-client-secret" force="true"/>
+    <env name="GITHUB_OAUTH_AUTHORIZE_URL" value="https://github.test/login/oauth/authorize" force="true"/>
+    <env name="GITHUB_OAUTH_TOKEN_URL" value="https://github.test/login/oauth/access_token" force="true"/>
+    <env name="GITHUB_MUTATION_DELAY_MS" value="0" force="true"/>
+    <env name="GITHUB_MEMBERSHIP_POLL_SLEEP_MS" value="0" force="true"/>
+    <env name="SD_CLIENT_ID" value="" force="true"/>
+    <env name="SD_CLIENT_SECRET" value="" force="true"/>
   </php>
   <source>
     <include>

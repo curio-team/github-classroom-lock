@@ -6,7 +6,7 @@
 
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>Software Developer | Curio</title>
+        <title>{{ config('app.name') }} | Curio</title>
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles

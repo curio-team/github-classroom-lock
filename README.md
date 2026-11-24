@@ -1,63 +1,105 @@
-# GitHub Classroom Lock
+# GitHub Exam Onboarding
 
-Locks a GitHub Classroom by removing all students from their team. It keeps track of the students that were removed to allow restoring them later.
+Sets up exams on GitHub for Curio Software Development. Every exam group gets its own team, private
+repository and Project in the `curio-summatief` organization. Students join with one invite link, and
+examinators can lock and unlock the groups during the exam.
 
-This helps us restrict access when students leave our school.
+## How an exam works
 
-## Known issues
+On the exam page, the examinator goes through five steps:
 
-* When removing members from a team, all tasks assigned to them get unassigned.
+1. **Studenten:** upload the students taking the exam, with their exam group. This is a CSV with `github_username`
+   and `group`; an Excel export works too. Unknown usernames, duplicates and empty groups are reported before
+   anything is saved. A corrected list can simply be uploaded again.
+2. **Klaarzetten:** one click creates the team, private repository (optionally from a template) and Project
+   (optionally copied from a template) for each group. Running it again is safe: what already exists is reused.
+3. **Uitnodigen:** share the invite link. Students sign in with GitHub and land in their own group. Only students
+   on the list can join, so a forwarded link is useless to others. The page shows who is in and who isn't yet.
+4. **Tijdens het examen:** lock a group, or all groups, at the end of the day, and unlock at the start of the next.
+   Locking removes the team's access to its repository and Project. Students stay in their team, so assigned
+   issues and history are kept.
+5. **Afsluiten:** after the exam, students are removed from their teams and from `curio-summatief`, and the
+   repositories are archived (read-only). You see exactly what will happen and confirm by typing the exam name.
+   Organization owners are never removed.
 
-## Getting Started
+Every change on GitHub is recorded in the **Auditlog**.
 
-1. Clone this repository
-2. Run `composer install`
-3. Copy `.env.example` to `.env` and fill in the values (see [#Access Tokens](#access-tokens) for more info)
-4. Run `php artisan key:generate`
-5. `npm run dev` to run vite and compile the frontend (watching for changes)
-6. `php artisan serve` to run the server
-7. Open `http://localhost:8000` in your browser
-8. Run `php artisan migrate` to create the database
+### Projects and locking
 
-## Access Tokens
+A Project's *base role* (what every org member may do) can't be read or changed through the GitHub API. If a
+Project gives all org members access, students can still open it while their group is locked. Check this once
+in a Project under **Settings → Manage access**. If it's set, use **Projects voor de hele organisatie uitzetten**
+in step 4. Note that this switch affects every exam running at the same time.
 
-### GitHub access token
+## Getting started
 
-1. [Get a Fine-grained access token from GitHub here](https://github.com/settings/personal-access-tokens/new).
-2. Select the `curio-summatief` organization
-3. Select `All repositories` under 'Repository access'
-4. Give it the following permissions:
-    * *(Optional) Repository permissions:*
-        * Contents: read and write, for the assigning of the default repository to the project
-        * Read and Write access to administration, for assigning the projects
-    * Organization permissions:
-        * Members: read and write
-        * Administration: read and write, for the (un)locking of Projects
+1. `composer install` and `npm install`
+2. Copy `.env.example` to `.env`, fill it in (see [GitHub App](#github-app)), and run `php artisan key:generate`
+3. `php artisan migrate`
+4. `npm run build` (or `npm run dev`), then `php artisan serve`
+5. Run `php artisan queue:work`: preparing groups, locking and closing an exam run as queued jobs
+6. Check the setup with `php artisan github:check`. It only reads, so it's safe against production.
 
-### OpenAI access token
+Examinators sign in with the SD client (login.curio.codes). Students sign in with GitHub.
 
-1. [Get an OpenAI API key here](https://platform.openai.com/api-keys).
-2. Copy the key and paste it in the `.env` file as `OPENAI_API_KEY`.
-3. Make sure you've prepaid some money to your OpenAI account.
+## GitHub App
 
-## Notes
+One GitHub App does both jobs: it makes all changes in the organization, and it handles the students'
+"Sign in with GitHub".
 
-### cURL error 60: SSL certificate expired
+1. Go to **curio-summatief → Settings → Developer settings → GitHub Apps → New GitHub App**.
+2. Fill in:
+   * **Homepage URL:** the app's URL
+   * **Callback URL:** `{APP_URL}/join/github/callback`. Add one per environment, e.g. `http://127.0.0.1:8000/...`
+     and the production URL. A GitHub App can have up to 10.
+   * **Request user authorization (OAuth) during installation:** off
+   * **Webhook → Active:** off
+   * **Where can this GitHub App be installed?** Only on this account
+3. **Permissions:**
 
-To test locally it can be useful to add `SD_SSL_VERIFYPEER=no` to your .env file. This disables SSL verification, which is not recommended for production.
+   | Type | Permission | Access | Used for |
+   | --- | --- | --- | --- |
+   | Repository | Administration | Read & write | Creating, locking and archiving repositories |
+   | Repository | Contents | Read & write | Creating repositories from a template |
+   | Repository | Metadata | Read | (required) |
+   | Organization | Members | Read & write | Teams, invitations, memberships |
+   | Organization | Administration | Read & write | Base permission, organization-wide Projects switch |
+   | Organization | Projects | Read & write | Creating, linking and locking Projects |
 
-### Disable output buffering in PHP
+4. Create the app, then on its settings page:
+   * Note the **App ID** and **Client ID**
+   * **Generate a new client secret**
+   * **Generate a private key** and store the `.pem` outside git (`*.pem` is ignored)
+5. **Install App** → `curio-summatief` → **All repositories**. The installation ID is the number at the end of the
+   URL you land on (`…/settings/installations/<id>`).
+6. Fill in `.env`:
 
-In order for the frontend to receive the chat output immediately, you need to disable output buffering in PHP. You can do this by setting `output_buffering = off` in your `php.ini` file.
+   ```dotenv
+   GITHUB_ORGANIZATION=curio-summatief
+   GITHUB_APP_ID=
+   GITHUB_APP_INSTALLATION_ID=
+   GITHUB_APP_PRIVATE_KEY_PATH=github-bot.pem   # absolute, or relative to the project root
+   GITHUB_OAUTH_CLIENT_ID=                      # the app's Client ID (starts with Iv)
+   GITHUB_OAUTH_CLIENT_SECRET=
+   ```
 
-> [!TIP]
-> I have no idea why, but if you can't get output buffering to stop, I found that in `/etc/apache2/conf-available/php8.1-fpm.conf`:
->
-> ```apache
-> <FilesMatch ".+\.ph(?:ar|p|tml)$">
-> #    SetHandler "proxy:unix:/run/php/php8.1-fpm.sock|fcgi://localhost"
-> </FilesMatch>
-> ```
->
-> You can comment the SetHandler line to simplify the setup and ensure no other settings are interfering.
-> Please open an issue if you can tell me why this works.
+7. Run `php artisan github:check`.
+
+Also set the organization's **base repository permission** to **No permission**, so students only see their own
+group's repository. The exam page warns you if it isn't. Staff are owners, so they keep access to everything.
+
+## Good to know
+
+* GitHub allows 500 invitations per 24 hours, and an unaccepted invitation expires after 7 days. A student whose
+  invitation expired can simply open the link again.
+* A student removed from the list keeps their GitHub access. Close the exam (step 5) for them first if needed.
+* If GitHub won't let the app accept the invitation automatically, the student gets a button to accept it on
+  github.com (one extra click).
+* **Oude Classroom-teams** is the previous lock tool, for teams created by GitHub Classroom. New exams don't need it.
+
+## Development
+
+In the code, an exam is a `Cohort` (with `Group`s and `Student`s). The GitHub calls live in `app/Services`.
+
+`php artisan test` runs against SQLite and a simulated GitHub API
+([tests/Support/FakeGitHub.php](tests/Support/FakeGitHub.php)). Real requests to GitHub are blocked.

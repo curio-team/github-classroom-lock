@@ -18,10 +18,16 @@ class UserFactory extends Factory
     public function definition()
     {
         return [
+            'id' => 'u' . fake()->unique()->numberBetween(1000, 999999),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'password' => '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+            'type' => 'student',
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function teacher(): static
+    {
+        return $this->state(fn () => ['type' => 'teacher']);
     }
 }

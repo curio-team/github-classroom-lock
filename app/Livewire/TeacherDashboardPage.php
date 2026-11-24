@@ -3,7 +3,6 @@
 namespace App\Livewire;
 
 use App\Models\Team;
-use App\Settings\ChatSettings;
 use Github\AuthMethod;
 use Github\Client;
 use Github\ResultPager;
@@ -13,31 +12,36 @@ class TeacherDashboardPage extends Component
 {
     public $showArchived = false;
 
-    public $chatPassword;
     public $isProjectsEnabled;
 
     public $teamProjects;
 
-    public function mount(ChatSettings $settings)
+    public function mount()
     {
-        $this->chatPassword = $settings->chat_password;
-
         $organization = $this->getOrganization();
         $this->isProjectsEnabled = $organization['has_organization_projects'] ?? false;
 
         $this->teamProjects = $this->getProjects();
     }
 
+    /**
+     * Same server credentials as the onboarding service (GitHub App installation token, or GITHUB_TOKEN).
+     */
+    private function githubToken(): string
+    {
+        return app(\App\GitHub\GitHub::class)->orgTokenSource()->token();
+    }
+
     private function getOrganization()
     {
         $client = new Client();
-        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
-        $organization = config('app.github_organization');
+        $client->authenticate($this->githubToken(), AuthMethod::ACCESS_TOKEN);
+        $organization = config('github.organization');
 
         return $client->organizations()->show($organization);
     }
 
-    public function render(ChatSettings $settings)
+    public function render()
     {
         $teams = $this->showArchived
             ? \App\Models\Team::withArchived()
@@ -49,34 +53,27 @@ class TeacherDashboardPage extends Component
             return $team->locked;
         });
 
-        $isChatActive = $settings->chat_active;
-
-        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked', 'isChatActive'));
+        return view('livewire.teacher-dashboard-page', compact('teams', 'teamsLocked'));
     }
 
     public function lockProjects($locked)
     {
         $client = new Client();
-        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
-        $organization = config('app.github_organization');
+        $client->authenticate($this->githubToken(), AuthMethod::ACCESS_TOKEN);
+        $organization = config('github.organization');
 
         $client->organizations()->update($organization, [
             'has_organization_projects' => !$locked,
         ]);
     }
 
-    public function updateChatPassword(ChatSettings $settings)
-    {
-        $settings->chat_password = $this->chatPassword;
-        $settings->save();
-    }
 
     private function getApiClientAndPaginator()
     {
         $client = new Client();
         $paginator  = new ResultPager($client);
 
-        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
+        $client->authenticate($this->githubToken(), AuthMethod::ACCESS_TOKEN);
 
         return [$client, $paginator];
     }
@@ -88,7 +85,7 @@ class TeacherDashboardPage extends Component
     public function createProject(Client $client, Team $team, string $organizationId)
     {
         // Find the team ID for GraphQL by name
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
         $organizationTeamsQuery = <<<QUERY
         {
             organization(login: "$organization") {
@@ -206,9 +203,9 @@ class TeacherDashboardPage extends Component
             ->where('id', $teamId)
             ->first();
 
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
         $client = new Client();
-        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
+        $client->authenticate($this->githubToken(), AuthMethod::ACCESS_TOKEN);
 
         // First get the organization ID for the GraphQL query
         $organizationInfoQuery = <<<QUERY
@@ -250,9 +247,9 @@ class TeacherDashboardPage extends Component
         $teams = Team::whereIn('id', $teamIdsWithoutProject)
             ->get();
 
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
         $client = new Client();
-        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
+        $client->authenticate($this->githubToken(), AuthMethod::ACCESS_TOKEN);
 
         // First get the organization ID for the GraphQL query
         $organizationInfoQuery = <<<QUERY
@@ -283,8 +280,8 @@ class TeacherDashboardPage extends Component
     public function getProjects()
     {
         $client = new Client();
-        $client->authenticate(config('app.github_token'), AuthMethod::ACCESS_TOKEN);
-        $organization = config('app.github_organization');
+        $client->authenticate($this->githubToken(), AuthMethod::ACCESS_TOKEN);
+        $organization = config('github.organization');
 
         // Get all projects for the organization
         $projectsQuery = <<<QUERY
@@ -332,7 +329,7 @@ class TeacherDashboardPage extends Component
     public function makeTeamSnapshot()
     {
         [$client, $paginator] = $this->getApiClientAndPaginator();
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
 
         $teams = $paginator->fetchAll($client->teams(), 'all', [$organization]);
 
@@ -379,7 +376,7 @@ class TeacherDashboardPage extends Component
     public function lockAllTeams()
     {
         [$client] = $this->getApiClientAndPaginator();
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
 
         $teams = \App\Models\Team::with('members')
             ->where('locked', false)
@@ -404,7 +401,7 @@ class TeacherDashboardPage extends Component
     public function unlockAllTeams()
     {
         [$client] = $this->getApiClientAndPaginator();
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
 
         $teams = \App\Models\Team::with('members')->where('locked', true)->get();
 
@@ -427,7 +424,7 @@ class TeacherDashboardPage extends Component
     public function lockTeam($teamId)
     {
         [$client] = $this->getApiClientAndPaginator();
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
 
         /** @var \App\Models\Team $team */
         $team = \App\Models\Team::withArchived()
@@ -449,7 +446,7 @@ class TeacherDashboardPage extends Component
     public function unlockTeam($teamId)
     {
         [$client] = $this->getApiClientAndPaginator();
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
 
         /** @var \App\Models\Team $team */
         $team = \App\Models\Team::withArchived()
@@ -471,7 +468,7 @@ class TeacherDashboardPage extends Component
     public function refreshTeam($teamId)
     {
         [$client, $paginator] = $this->getApiClientAndPaginator();
-        $organization = config('app.github_organization');
+        $organization = config('github.organization');
 
         /** @var \App\Models\Team $team */
         $team = \App\Models\Team::withArchived()
@@ -545,21 +542,4 @@ class TeacherDashboardPage extends Component
         $team->delete();
     }
 
-    /**
-     * Lock the GPT chat.
-     */
-    public function lockChat(ChatSettings $settings)
-    {
-        $settings->chat_active = false;
-        $settings->save();
-    }
-
-    /**
-     * Unlock the GPT chat.
-     */
-    public function unlockChat(ChatSettings $settings)
-    {
-        $settings->chat_active = true;
-        $settings->save();
-    }
 }
