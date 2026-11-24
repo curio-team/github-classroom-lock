@@ -1,6 +1,6 @@
 <h3 {{
     $attributes->merge([
-        'class' => 'text-lg font-medium text-gray-900'
+        'class' => 'text-lg font-bold text-ink'
     ])
 }}>
     {{ $slot }}

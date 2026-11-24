@@ -4,11 +4,11 @@
 ])
 <div tight {{
     $attributes->class([
-        'rounded border p-4',
-        'bg-slate-500 border-slate-600 text-slate-200' => $type === 'info',
-        'bg-emerald-800 border-emerald-700 text-slate-400' => $type === 'success',
-        'bg-red-800 border-red-700 text-slate-400' => $type === 'error',
-        'bg-amber-600 border-amber-700 text-white' => $type === 'warning',
+        'alert',
+        'alert-secondary' => $type === 'info',
+        'alert-success' => $type === 'success',
+        'alert-danger' => $type === 'error',
+        'alert-warning' => $type === 'warning',
     ])
 }}>
     <div class="flex">

@@ -9,7 +9,7 @@
      xmlns="http://www.w3.org/2000/svg">
     <g clip-path="url(#clip0_105_1724)">
         <path d="M3 6.00098H21M3 12.001H21M3 18.001H21"
-              stroke="#292929"
+              stroke="currentColor"
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2" />

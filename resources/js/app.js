@@ -1,5 +1,9 @@
 import './bootstrap';
 
+import.meta.glob([
+    '../img/**',
+]);
+
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 import Clipboard from '@ryangjchandler/alpine-clipboard';
 import Tooltip from "@ryangjchandler/alpine-tooltip";
@@ -20,8 +24,17 @@ window.Notyf = new Notyf({
     },
     types: [
         {
+            type: 'success',
+            background: '#00B67A',
+        },
+        {
+            type: 'error',
+            background: '#F63030',
+        },
+        {
             type: 'warning',
-            background: 'orange',
+            background: '#FFCC00',
+            className: 'notyf__toast--warning',
             icon: {
                 className: 'notyf__icon--error',
                 tagName: 'i',

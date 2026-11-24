@@ -24,11 +24,11 @@ enum StudentStatus: string
     public function color(): string
     {
         return match ($this) {
-            self::Imported => 'bg-gray-100 text-gray-700',
-            self::Invited => 'bg-amber-100 text-amber-800',
-            self::Joined => 'bg-green-100 text-green-800',
-            self::Failed => 'bg-red-100 text-red-800',
-            self::Offboarded => 'bg-slate-200 text-slate-600',
+            self::Imported => 'badge-secondary',
+            self::Invited => 'badge-warning',
+            self::Joined => 'badge-success',
+            self::Failed => 'badge-danger',
+            self::Offboarded => 'badge-secondary',
         };
     }
 }

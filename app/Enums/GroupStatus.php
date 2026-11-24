@@ -24,11 +24,11 @@ enum GroupStatus: string
     public function color(): string
     {
         return match ($this) {
-            self::Pending => 'bg-gray-100 text-gray-700',
-            self::Provisioning => 'bg-blue-100 text-blue-800',
-            self::Provisioned => 'bg-green-100 text-green-800',
-            self::Failed => 'bg-red-100 text-red-800',
-            self::Archived => 'bg-slate-200 text-slate-600',
+            self::Pending => 'badge-secondary',
+            self::Provisioning => 'badge-warning',
+            self::Provisioned => 'badge-success',
+            self::Failed => 'badge-danger',
+            self::Archived => 'badge-secondary',
         };
     }
 }

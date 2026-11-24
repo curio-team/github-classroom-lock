@@ -1,3 +1,3 @@
-<p class="text-gray-400 text-sm italic">
+<p class="text-muted text-sm">
     Work in progress. This feature is coming soon®...
 </p>

@@ -7,7 +7,7 @@
         {{ $tabs }}
     </div>
 
-    <div class="flex flex-col gap-2 grow p-2 border border-gray-400 rounded rounded-t-none">
+    <div class="flex flex-col gap-2 grow p-2 border border-ink/15 rounded-lg rounded-t-none">
         {{ $slot }}
     </div>
 </div>

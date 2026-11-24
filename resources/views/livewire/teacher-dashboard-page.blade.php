@@ -19,7 +19,7 @@
             @if($isProjectsEnabled)
             <x-buttons.danger wire:click="lockProjects(true)">Vergrendel GitHub Projects</x-buttons.danger>
             @else
-            <x-buttons.primary wire:click="lockProjects(false)">Ontgrendel GitHub Projects</x-buttons.primary>
+            <x-buttons.success wire:click="lockProjects(false)">Ontgrendel GitHub Projects</x-buttons.success>
             @endif
         </div>
     </x-content.section>
@@ -31,26 +31,26 @@
                 <p>Teamleden van vergrendelde teams hebben geen toegang tot hun team of repo. Gebruik de Archiveer knoppen bij teams aan het eind van hun examen.</p>
             </x-content.hint>
 
-            <div class="flex flex-row gap-2">
-                <input type="checkbox" wire:model.live="showArchived" class="rounded border-gray-800 border-2 w-6 h-6" id="showArchived" />
-                <label for="showArchived">Toon gearchiveerde teams</label>
+            <div class="flex flex-row items-center gap-2">
+                <input type="checkbox" wire:model.live="showArchived" class="checkbox" id="showArchived" />
+                <label for="showArchived" class="label cursor-pointer">Toon gearchiveerde teams</label>
             </div>
 
             @forelse ($teams as $team)
-                <x-content.stack-layout class="border-2 border-gray-800 p-4 rounded">
+                <x-content.stack-layout class="border border-ink/15 bg-surface-subtle p-4 rounded-lg">
                     <div class="flex flex-row justify-between">
-                        <h4 class="font-bold">{{ $team->name }}</h4>
+                        <h4 class="font-bold text-lg">{{ $team->name }}</h4>
                         <x-content.status-indicator :active="!$team->locked">
                             {{ $team->locked ? 'Locked' : 'Unlocked' }}
                         </x-content.status-indicator>
                     </div>
-                    <h5>Leden:</h5>
+                    <h5 class="font-bold">Leden:</h5>
                     <x-content.stack-layout row wrap>
                         @forelse ($team->members as $member)
-                            <x-content.stack-layout row tight class="bg-gray-100 py-2 px-4 rounded">
+                            <x-content.stack-layout row tight class="bg-white border border-ink/10 py-2 px-4 rounded-lg text-ink">
                                 <img src="{{ $member->avatar_url }}"
                                     alt="{{ $member->login }}'s avatar"
-                                    class="w-8 h-8 rounded"
+                                    class="w-8 h-8 rounded-lg"
                                 />
                                 {{ $member->login }}
                                 <x-buttons.danger
@@ -69,12 +69,12 @@
                             </x-content.hint>
                         @endforelse
                     </x-content.stack-layout>
-                    <h5>Project(en):</h5>
+                    <h5 class="font-bold">Project(en):</h5>
                     <x-content.stack-layout row wrap>
                         @isset($teamProjects[$team->id])
                             @forelse ($teamProjects[$team->id] as $project)
                                 <a href="{{ $project->url }}" target="_blank">
-                                    <x-content.stack-layout row tight class="bg-gray-100 py-2 px-4 rounded">
+                                    <x-content.stack-layout row tight class="bg-white border border-ink/10 py-2 px-4 rounded-lg text-ink">
                                         {{ $project->title }}
                                     </x-content.stack-layout>
                                 </a>
@@ -93,7 +93,7 @@
 
                     <x-content.stack-layout row x-data="{}">
                         @if ($team->locked)
-                            <x-buttons.primary wire:click="unlockTeam('{{ $team->id }}')" class="grow">Ontgrendel Team</x-buttons.primary>
+                            <x-buttons.success wire:click="unlockTeam('{{ $team->id }}')" class="grow">Ontgrendel Team</x-buttons.success>
                             @if ($team->is_archived)
                                 <x-buttons.secondary wire:click="unarchiveTeam('{{ $team->id }}')">De-archiveer</x-buttons.secondary>
                             @else
@@ -125,7 +125,7 @@
 
                 <x-content.stack-layout row wrap tight x-cloak x-show="cheatActive">
                     @if ($teamsLocked)
-                        <x-buttons.primary wire:click="unlockAllTeams">Ontgrendel Alle Teams</x-buttons.primary>
+                        <x-buttons.success wire:click="unlockAllTeams">Ontgrendel Alle Teams</x-buttons.success>
                     @else
                         <x-buttons.danger wire:click="lockAllTeams">Vergrendel Alle Teams</x-buttons.danger>
                     @endif
@@ -140,9 +140,9 @@
     </x-content.section>
 
     <div wire:loading>
-        <div class="fixed inset-0 bg-gray-800 bg-opacity-75 grid place-items-center justify-center text-white">
-            <div class="flex flex-col items-center gap-2 rounded bg-gray-800 p-4 shadow">
-                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-gray-200"></div>
+        <div class="fixed inset-0 z-50 bg-ink/75 grid place-items-center justify-center text-white">
+            <div class="flex flex-col items-center gap-2 rounded-lg bg-ink p-6 shadow-card-hover">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
                 Aan het laden...
             </div>
         </div>

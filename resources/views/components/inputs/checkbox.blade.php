@@ -12,7 +12,7 @@
     $checked = !! $checked
 @endphp
 
-<div class="form-check">
+<div class="flex items-center gap-2">
 
     {{-- Adds a hidden default value to be send if checked is false --}}
     @if($addHiddenValue)
@@ -25,11 +25,11 @@
         name="{{ $name }}"
         value="{{ $value ?? 1 }}"
         {{ $checked ? 'checked' : '' }}
-        {{ $attributes->merge(['class' => 'form-check-input']) }}
+        {{ $attributes->merge(['class' => 'checkbox']) }}
     >
 
     @if($label ?? null)
-        <label class="form-check-label" for="{{ $id ?? $name }}">
+        <label class="label cursor-pointer" for="{{ $id ?? $name }}">
             {{ $label }}
         </label>
     @endif

@@ -5,7 +5,7 @@
     <div class="flex flex-col sm:flex-row gap-2 flex-wrap items-stretch sm:items-center @if ($center) justify-center @else justify-between @endif">
         <h2 {{
             $attributes->merge([
-                'class' => 'font-semibold text-xl leading-tight text-center sm:text-left'
+                'class' => 'font-bold text-2xl leading-tight text-ink text-center sm:text-left'
             ])
         }}>
             <div class="flex flex-row gap-2 items-center">

@@ -12,7 +12,7 @@
     name="{{ $name }}" 
     rows="3"
     {{ ($required ?? false) ? 'required' : '' }}
-    {{ $attributes->merge(['class' => 'form-control']) }}
+    {{ $attributes->merge(['class' => 'input']) }}
     autocomplete="off"
 >{{$slot}}</textarea>
 

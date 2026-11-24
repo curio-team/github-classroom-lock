@@ -1,7 +1,7 @@
 @props([
     'max' => 100,
     'value' => 0,
-    'color' => 'bg-emerald-400',
+    'color' => 'bg-success',
     'hideMaxLabel' => false
 ])
 <div {{
@@ -9,6 +9,6 @@
         'class' => 'flex flex-row gap-2 items-center rounded self-stretch',
     ])
 }}>
-    <progress class="flex-1 h-2 border border-slate-400 bg-slate-200 rounded" max="{{ $max }}" value="{{ $value }}"></progress>
+    <progress class="flex-1 h-2 border border-ink/15 bg-ink/5 rounded accent-primary" max="{{ $max }}" value="{{ $value }}"></progress>
     <div class="text-xs"><span class="progress-value-approximation hidden">±</span><span class="progress-value">{{ number_format_locale($value) }}</span> @unless($hideMaxLabel) / {{ number_format_locale($max) }} @endunless{{ $slot }}</div>
 </div>

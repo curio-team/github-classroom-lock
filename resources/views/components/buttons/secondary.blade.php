@@ -1,6 +1,4 @@
-<x-buttons.primary {{ $attributes->merge([
-    'class' => '!bg-white !border-gray-300 hover:!bg-gray-100 !text-gray-700 !ring-indigo-500'
-])}}>
+<x-buttons.primary variant="secondary" {{ $attributes }}>
     {{ $slot }}
 
     @isset($modal)

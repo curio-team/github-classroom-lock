@@ -2,19 +2,19 @@
 <x-content.main>
     {{-- Header + steps --}}
     <x-content.section>
-        <a href="{{ route('exams.index') }}" class="text-sm text-gray-500 underline">← Examens</a>
-        <h2 class="text-2xl font-semibold">{{ $cohort->name }}</h2>
+        <a href="{{ route('exams.index') }}" class="self-start text-sm font-bold">← Examens</a>
+        <h2 class="text-2xl font-bold">{{ $cohort->name }}</h2>
 
         <nav class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-2">
             @foreach ($steps as $key => $label)
                 <button type="button" wire:click="$set('step', '{{ $key }}')"
                     @class([
-                        'text-left rounded-md border px-3 py-2 text-sm transition',
-                        'border-gray-900 bg-gray-900 text-white' => $step === $key,
-                        'border-gray-200 hover:border-gray-400' => $step !== $key,
+                        'text-left rounded-lg border px-3 py-2 text-sm cursor-pointer transition-colors duration-300',
+                        'border-primary bg-primary text-white' => $step === $key,
+                        'border-ink/15 bg-white text-ink hover:border-primary' => $step !== $key,
                     ])>
                     <span class="block text-xs opacity-70">Stap {{ $loop->iteration }} @if ($progress[$key]) ✓ @endif</span>
-                    <span class="font-semibold">{{ $label }}</span>
+                    <span class="font-bold">{{ $label }}</span>
                     <span class="block text-xs opacity-70">
                         @switch($key)
                             @case('students') {{ $students->count() }} studenten, {{ $groups->count() }} groepen @break
@@ -30,23 +30,23 @@
     </x-content.section>
 
     @if ($cohort->offboarding_started_at && ! $cohort->offboarded_at)
-        <div class="rounded-md bg-amber-50 border border-amber-200 p-4 text-amber-900">
+        <div class="alert alert-warning">
             Het examen wordt afgesloten (gestart {{ $cohort->offboarding_started_at->format('d-m-Y H:i') }}). Deze pagina wordt vanzelf bijgewerkt.
         </div>
     @elseif ($cohort->offboarded_at)
-        <div class="rounded-md bg-slate-100 border border-slate-200 p-4 text-slate-700">
+        <div class="alert alert-secondary">
             Dit examen is afgesloten op {{ $cohort->offboarded_at->format('d-m-Y H:i') }}.
         </div>
     @endif
 
     @if ($orgProblems)
-        <div class="rounded-md bg-red-50 border border-red-200 p-4 text-red-900 flex flex-col gap-2">
+        <div class="alert alert-danger flex flex-col gap-2">
             <strong>Controleer de GitHub-organisatie</strong>
             @foreach ($orgProblems as $check)
                 <div>
-                    <span class="font-semibold">{{ $check['label'] }}:</span> {{ $check['message'] }}
+                    <span class="font-bold">{{ $check['label'] }}:</span> {{ $check['message'] }}
                     @if ($check['key'] === 'base_permission' && $check['level'] === 'error')
-                        <button type="button" class="ml-2 underline" x-on:click="if (confirm('Basisrechten van de hele organisatie op No permission zetten?')) $wire.fixBasePermission()">Nu oplossen</button>
+                        <button type="button" class="ml-2 font-bold underline cursor-pointer" x-on:click="if (confirm('Basisrechten van de hele organisatie op No permission zetten?')) $wire.fixBasePermission()">Nu oplossen</button>
                     @endif
                 </div>
             @endforeach
@@ -61,20 +61,20 @@
                 Upload een CSV-bestand met de kolommen <code>github_username</code> en <code>group</code>
                 (een export uit Excel met puntkomma's werkt ook), of plak de lijst hieronder.
             </p>
-            <pre class="bg-gray-50 rounded p-2 text-xs">github_username,group
+            <pre class="bg-surface-subtle border border-ink/10 rounded-lg p-3 text-xs">github_username,group
 octocat,Groep 1
 monalisa,Groep 1
 hubot,Groep 2</pre>
 
             <form wire:submit="previewRoster" class="flex flex-col gap-2">
-                <input type="file" wire:model="rosterFile" accept=".csv,.txt,.tsv,text/csv">
-                @error('rosterFile') <p class="text-red-500 italic">{{ $message }}</p> @enderror
+                <input type="file" wire:model="rosterFile" accept=".csv,.txt,.tsv,text/csv" class="text-sm">
+                @error('rosterFile') <p class="text-sm font-medium text-danger-ink">{{ $message }}</p> @enderror
                 <details>
-                    <summary class="text-sm text-gray-600 cursor-pointer">…of plak de lijst</summary>
-                    <textarea wire:model="rosterText" rows="8" class="w-full p-2 border border-gray-300 rounded-md font-mono text-xs" placeholder="github_username,group"></textarea>
+                    <summary>…of plak de lijst</summary>
+                    <textarea wire:model="rosterText" rows="8" class="input w-full mt-2 font-mono text-xs" placeholder="github_username,group"></textarea>
                 </details>
                 <div>
-                    <button type="submit" class="rounded-md bg-gray-800 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-gray-700" wire:loading.attr="disabled">
+                    <button type="submit" class="button self-start" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="previewRoster">Controleren</span>
                         <span wire:loading wire:target="previewRoster">Gebruikers opzoeken op GitHub…</span>
                     </button>
@@ -90,17 +90,17 @@ hubot,Groep 2</pre>
                 <x-headings.section>Controle</x-headings.section>
 
                 <div class="flex flex-wrap gap-2 text-sm">
-                    <span class="rounded bg-gray-100 px-2 py-1">{{ count($preview->rows) }} geldige studenten</span>
-                    <span class="rounded bg-green-100 px-2 py-1">{{ count($preview->changes['new']) }} nieuw</span>
-                    <span class="rounded bg-blue-100 px-2 py-1">{{ count($preview->changes['moved']) }} andere groep</span>
-                    <span class="rounded bg-red-100 px-2 py-1">{{ count($preview->changes['removed']) }} verwijderd</span>
-                    <span class="rounded bg-gray-100 px-2 py-1">{{ count($preview->groupCounts) }} groepen</span>
+                    <span class="badge badge-secondary">{{ count($preview->rows) }} geldige studenten</span>
+                    <span class="badge badge-success">{{ count($preview->changes['new']) }} nieuw</span>
+                    <span class="badge badge-warning">{{ count($preview->changes['moved']) }} andere groep</span>
+                    <span class="badge badge-danger">{{ count($preview->changes['removed']) }} verwijderd</span>
+                    <span class="badge badge-secondary">{{ count($preview->groupCounts) }} groepen</span>
                 </div>
 
                 @if ($preview->errors)
-                    <div class="rounded-md bg-red-50 border border-red-200 p-3">
-                        <strong class="text-red-800">{{ count($preview->errors) }} fout(en): pas het bestand aan en controleer opnieuw.</strong>
-                        <ul class="list-disc pl-5 text-sm text-red-800">
+                    <div class="alert alert-danger">
+                        <strong>{{ count($preview->errors) }} fout(en): pas het bestand aan en controleer opnieuw.</strong>
+                        <ul class="list-disc pl-5 text-sm">
                             @foreach ($preview->errors as $error)
                                 <li>@if ($error['line']) Regel {{ $error['line'] }}: @endif {{ $error['message'] }}</li>
                             @endforeach
@@ -109,9 +109,9 @@ hubot,Groep 2</pre>
                 @endif
 
                 @if ($preview->warnings)
-                    <div class="rounded-md bg-amber-50 border border-amber-200 p-3">
-                        <strong class="text-amber-800">Let op</strong>
-                        <ul class="list-disc pl-5 text-sm text-amber-800">
+                    <div class="alert alert-warning">
+                        <strong>Let op</strong>
+                        <ul class="list-disc pl-5 text-sm">
                             @foreach ($preview->warnings as $warning)
                                 <li>@if ($warning['line']) Regel {{ $warning['line'] }}: @endif {{ $warning['message'] }}</li>
                             @endforeach
@@ -124,7 +124,7 @@ hubot,Groep 2</pre>
                         <strong>Groepen</strong>
                         <ul>
                             @foreach ($preview->groupCounts as $name => $count)
-                                <li>{{ $name }}: {{ $count }} @if (in_array($name, $preview->newGroups)) <span class="text-green-700">(nieuw)</span> @endif</li>
+                                <li>{{ $name }}: {{ $count }} @if (in_array($name, $preview->newGroups)) <span class="text-success-ink font-bold">(nieuw)</span> @endif</li>
                             @endforeach
                         </ul>
                     </div>
@@ -165,9 +165,9 @@ hubot,Groep 2</pre>
                 </div>
                 <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                     @foreach ($groups as $group)
-                        <div class="rounded border p-3">
+                        <div class="rounded-lg border border-ink/10 bg-surface-subtle p-3">
                             <strong>{{ $group->name }}</strong>
-                            <div class="text-gray-600">{{ $group->students->pluck('github_login')->implode(', ') ?: 'geen studenten' }}</div>
+                            <div class="text-muted">{{ $group->students->pluck('github_login')->implode(', ') ?: 'geen studenten' }}</div>
                         </div>
                     @endforeach
                 </div>
@@ -177,7 +177,7 @@ hubot,Groep 2</pre>
 
     {{-- 2. Prepare --}}
     @if ($step === 'prepare' && $organizationProjects === false)
-        <div class="rounded-md bg-red-50 border border-red-200 p-4 text-red-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="alert alert-danger flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <strong>Projects staan uit voor de organisatie.</strong>
                 Zonder Projects kan een groep geen Project krijgen. Deze instelling geldt voor de hele organisatie; misschien heeft iemand hem uitgezet om een examen te vergrendelen.
@@ -196,60 +196,60 @@ hubot,Groep 2</pre>
                     </x-buttons.primary>
                 @endif
             </div>
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-muted">
                 Elke groep krijgt een eigen team, een private repository en een Project, die alleen de groep zelf kan zien.
                 Je kunt dit veilig opnieuw doen: wat al bestaat wordt hergebruikt.
             </p>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="text-left text-gray-500">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <th class="py-2 pr-4">Groep</th>
-                            <th class="py-2 pr-4">Status</th>
-                            <th class="py-2 pr-4">Op GitHub</th>
-                            <th class="py-2 pr-4"></th>
+                            <th>Groep</th>
+                            <th>Status</th>
+                            <th>Op GitHub</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($groups as $group)
-                            <tr class="border-t align-top">
-                                <td class="py-2 pr-4">
+                            <tr class="align-top">
+                                <td>
                                     <strong>{{ $group->name }}</strong>
-                                    <div class="text-xs text-gray-500">{{ $group->students_count }} studenten</div>
+                                    <div class="text-xs text-muted">{{ $group->students_count }} studenten</div>
                                 </td>
-                                <td class="py-2 pr-4">
-                                    <span class="rounded px-2 py-0.5 text-xs font-semibold {{ $group->status->color() }}">{{ $group->status->label() }}</span>
+                                <td>
+                                    <span class="badge {{ $group->status->color() }}">{{ $group->status->label() }}</span>
                                     @if ($group->status !== \App\Enums\GroupStatus::Provisioned)
                                         <div class="flex flex-wrap gap-x-2 mt-1">
                                             @foreach (\App\Enums\ProvisioningStep::cases() as $provisioningStep)
                                                 <span @class([
                                                     'text-xs',
-                                                    'text-green-700' => $group->hasCompleted($provisioningStep),
-                                                    'text-red-700 font-semibold' => $group->failed_step === $provisioningStep->value,
-                                                    'text-gray-300' => ! $group->hasCompleted($provisioningStep) && $group->failed_step !== $provisioningStep->value,
+                                                    'text-success-ink' => $group->hasCompleted($provisioningStep),
+                                                    'text-danger-ink font-bold' => $group->failed_step === $provisioningStep->value,
+                                                    'text-ink/30' => ! $group->hasCompleted($provisioningStep) && $group->failed_step !== $provisioningStep->value,
                                                 ])>{{ $group->hasCompleted($provisioningStep) ? '✓' : ($group->failed_step === $provisioningStep->value ? '✗' : '○') }} {{ $provisioningStep->label() }}</span>
                                             @endforeach
                                         </div>
                                     @endif
                                     @if ($group->last_error)
-                                        <div class="text-xs text-red-700 mt-1 break-all">{{ $group->last_error }}</div>
+                                        <div class="text-xs text-danger-ink mt-1 break-all">{{ $group->last_error }}</div>
                                     @endif
                                 </td>
-                                <td class="py-2 pr-4">
+                                <td>
                                     <div class="flex flex-wrap gap-x-3">
                                         @if ($group->repository_url)
-                                            <a class="underline" target="_blank" href="{{ $group->repository_url }}">Repository</a>
+                                            <a class="font-bold" target="_blank" href="{{ $group->repository_url }}">Repository</a>
                                         @endif
                                         @if ($group->project_url)
-                                            <a class="underline" target="_blank" href="{{ $group->project_url }}">Project</a>
+                                            <a class="font-bold" target="_blank" href="{{ $group->project_url }}">Project</a>
                                         @endif
                                         @if ($group->team_slug)
-                                            <a class="underline" target="_blank" href="https://github.com/orgs/{{ $cohort->organization }}/teams/{{ $group->team_slug }}">Team</a>
+                                            <a class="font-bold" target="_blank" href="https://github.com/orgs/{{ $cohort->organization }}/teams/{{ $group->team_slug }}">Team</a>
                                         @endif
                                     </div>
                                 </td>
-                                <td class="py-2 pr-4 text-right">
+                                <td class="text-right">
                                     @if (! $cohort->offboarding_started_at && $group->status === \App\Enums\GroupStatus::Failed)
                                         <x-buttons.secondary tight wire:click="provisionGroup({{ $group->id }})">Opnieuw proberen</x-buttons.secondary>
                                     @endif
@@ -274,7 +274,7 @@ hubot,Groep 2</pre>
     @if ($step === 'invite')
         <x-content.section>
             <x-headings.section>Studenten uitnodigen</x-headings.section>
-            <p class="text-sm text-gray-600">
+            <p class="text-sm text-muted">
                 Deel deze link met de studenten (bijv. op het bord of in Teams). Ze loggen in met GitHub en komen automatisch in hun eigen groep.
                 Alleen studenten van de lijst kunnen meedoen: een doorgestuurde link geeft anderen geen toegang.
             </p>
@@ -282,7 +282,7 @@ hubot,Groep 2</pre>
             <div class="flex items-center gap-2">
                 @include('livewire.partials.invite-status', ['status' => $cohort->inviteLinkStatus()])
                 @if ($cohort->invite_expires_at && $cohort->inviteLinkStatus() !== 'none')
-                    <span class="text-sm text-gray-500">geldig t/m {{ $cohort->invite_expires_at->format('d-m-Y') }}</span>
+                    <span class="text-sm text-muted">geldig t/m {{ $cohort->invite_expires_at->format('d-m-Y') }}</span>
                 @endif
             </div>
 
@@ -302,8 +302,8 @@ hubot,Groep 2</pre>
                         setTimeout(() => this.copied = false, 2000);
                     },
                 }">
-                    <input type="text" readonly x-ref="link" value="{{ $cohort->inviteUrl() }}" class="grow p-2 border border-gray-300 rounded-md bg-gray-50 text-sm" x-on:click="$el.select()">
-                    <button type="button" x-on:click="copy()" class="shrink-0 rounded-md bg-gray-800 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-gray-700 focus:outline-none focus:ring focus:ring-offset-2">
+                    <input type="text" readonly x-ref="link" value="{{ $cohort->inviteUrl() }}" class="input grow text-sm" x-on:click="$el.select()">
+                    <button type="button" x-on:click="copy()" class="button">
                         <span x-text="copied ? 'Gekopieerd!' : 'Kopiëren'">Kopiëren</span>
                     </button>
                 </div>
@@ -311,12 +311,12 @@ hubot,Groep 2</pre>
 
             @if (! $cohort->offboarding_started_at)
                 <details @if (! $cohort->inviteLinkIsUsable()) open @endif>
-                    <summary class="cursor-pointer text-sm text-gray-600">{{ $cohort->inviteLinkIsUsable() ? 'Link aanpassen' : 'Link maken' }}</summary>
+                    <summary>{{ $cohort->inviteLinkIsUsable() ? 'Link aanpassen' : 'Link maken' }}</summary>
                     <div class="flex flex-col sm:flex-row sm:items-end gap-2 mt-2">
                         <div class="flex flex-col gap-1">
-                            <label for="inviteExpiresAt" class="text-sm font-medium">Geldig tot en met</label>
-                            <input id="inviteExpiresAt" type="date" wire:model="inviteExpiresAt" class="p-2 border border-gray-300 rounded-md">
-                            @error('inviteExpiresAt') <p class="text-red-500 italic">{{ $message }}</p> @enderror
+                            <label for="inviteExpiresAt" class="label">Geldig tot en met</label>
+                            <input id="inviteExpiresAt" type="date" wire:model="inviteExpiresAt" class="input">
+                            @error('inviteExpiresAt') <p class="text-sm font-medium text-danger-ink">{{ $message }}</p> @enderror
                         </div>
                         @if ($cohort->inviteLinkIsUsable())
                             <x-buttons.secondary wire:click="updateInviteExpiry">Datum opslaan</x-buttons.secondary>
@@ -339,29 +339,29 @@ hubot,Groep 2</pre>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead class="text-left text-gray-500">
+                <table class="data-table">
+                    <thead>
                         <tr>
-                            <th class="py-2 pr-4">Student</th>
-                            <th class="py-2 pr-4">Groep</th>
-                            <th class="py-2 pr-4">Status</th>
-                            <th class="py-2 pr-4"></th>
+                            <th>Student</th>
+                            <th>Groep</th>
+                            <th>Status</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($students->sortBy(fn ($s) => [$s->status->value === 'joined' ? 1 : 0, $s->github_login]) as $student)
-                            <tr class="border-t align-top" wire:key="student-{{ $student->id }}">
-                                <td class="py-2 pr-4">
-                                    <a class="underline" target="_blank" href="https://github.com/{{ $student->github_login }}">{{ $student->github_login }}</a>
+                            <tr class="align-top" wire:key="student-{{ $student->id }}">
+                                <td>
+                                    <a class="font-bold" target="_blank" href="https://github.com/{{ $student->github_login }}">{{ $student->github_login }}</a>
                                 </td>
-                                <td class="py-2 pr-4">{{ $student->group?->name ?? '—' }}</td>
-                                <td class="py-2 pr-4">
-                                    <span class="rounded px-2 py-0.5 text-xs font-semibold {{ $student->status->color() }}">{{ $student->status->label() }}</span>
+                                <td>{{ $student->group?->name ?? '—' }}</td>
+                                <td>
+                                    <span class="badge {{ $student->status->color() }}">{{ $student->status->label() }}</span>
                                     @if ($student->failure_reason)
-                                        <div class="text-xs text-red-700 mt-1 break-all">{{ $student->failure_reason }}</div>
+                                        <div class="text-xs text-danger-ink mt-1 break-all">{{ $student->failure_reason }}</div>
                                     @endif
                                 </td>
-                                <td class="py-2 pr-4 text-right">
+                                <td class="text-right">
                                     @if (in_array($student->status, [\App\Enums\StudentStatus::Failed, \App\Enums\StudentStatus::Invited, \App\Enums\StudentStatus::Imported]) && $student->last_attempt_at && ! $cohort->offboarding_started_at)
                                         <x-buttons.secondary tight wire:click="retryStudent({{ $student->id }})" wire:loading.attr="aria-disabled">Opnieuw proberen</x-buttons.secondary>
                                     @endif
@@ -380,7 +380,7 @@ hubot,Groep 2</pre>
 
             @if ($orgChecks)
                 <details>
-                    <summary class="cursor-pointer text-sm text-gray-600">Controles van de GitHub-organisatie</summary>
+                    <summary>Controles van de GitHub-organisatie</summary>
                     <ul class="flex flex-col gap-1 mt-2 text-sm">
                         @foreach ($orgChecks as $check)
                             <li>
@@ -389,7 +389,7 @@ hubot,Groep 2</pre>
                             </li>
                         @endforeach
                     </ul>
-                    <button type="button" wire:click="refreshChecks" class="mt-2 text-sm underline">Vernieuwen</button>
+                    <button type="button" wire:click="refreshChecks" class="mt-2 text-sm font-bold text-primary hover:text-primary-dark cursor-pointer">Vernieuwen</button>
                 </details>
             @endif
         </x-content.section>
@@ -401,7 +401,7 @@ hubot,Groep 2</pre>
             <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                 <div>
                     <x-headings.section>Tijdens het examen</x-headings.section>
-                    <p class="text-sm text-gray-600">
+                    <p class="text-sm text-muted">
                         Vergrendel aan het eind van de dag, ontgrendel bij de start. Een vergrendelde groep kan niet bij zijn repository en Project;
                         de studenten blijven wel in hun team, zodat toegewezen taken behouden blijven.
                     </p>
@@ -409,7 +409,7 @@ hubot,Groep 2</pre>
                 @if ($activeGroupCount > 0 && ! $cohort->offboarding_started_at)
                     <div class="flex gap-2 shrink-0">
                         <x-buttons.danger big x-on:click="if (confirm('Alle groepen vergrendelen?')) $wire.lockAll()">🔒 Alles vergrendelen</x-buttons.danger>
-                        <x-buttons.primary big x-on:click="if (confirm('Alle groepen ontgrendelen?')) $wire.unlockAll()">🔓 Alles ontgrendelen</x-buttons.primary>
+                        <x-buttons.success big x-on:click="if (confirm('Alle groepen ontgrendelen?')) $wire.unlockAll()">🔓 Alles ontgrendelen</x-buttons.success>
                     </div>
                 @endif
             </div>
@@ -418,12 +418,12 @@ hubot,Groep 2</pre>
                 @forelse ($groups->whereNull('archived_at') as $group)
                     <div wire:key="lock-{{ $group->id }}" @class([
                         'rounded-lg border-2 p-4 flex flex-col gap-2',
-                        'border-red-300 bg-red-50' => $group->isLocked(),
-                        'border-green-300 bg-green-50' => ! $group->isLocked(),
+                        'border-danger/40 bg-white' => $group->isLocked(),
+                        'border-success/40 bg-white' => ! $group->isLocked(),
                     ])>
                         <div class="flex justify-between items-start">
                             <strong>{{ $group->name }}</strong>
-                            <span class="text-sm font-semibold">
+                            <span class="text-sm font-bold">
                                 @if ($group->lock_pending)
                                     ⏳ {{ $group->isLocked() ? 'Vergrendelen…' : 'Ontgrendelen…' }}
                                 @else
@@ -436,19 +436,19 @@ hubot,Groep 2</pre>
                             @foreach ($group->students as $student)
                                 <li class="flex justify-between">
                                     <span>{{ $student->github_login }}</span>
-                                    <span class="text-xs {{ $student->status->value === 'joined' ? 'text-green-700' : 'text-amber-700' }}">{{ $student->status->label() }}</span>
+                                    <span class="text-xs {{ $student->status->value === 'joined' ? 'text-success-ink' : 'text-warning-ink' }}">{{ $student->status->label() }}</span>
                                 </li>
                             @endforeach
                         </ul>
 
                         @if ($group->lock_error)
-                            <div class="text-xs text-red-700 break-all">{{ $group->lock_error }}</div>
+                            <div class="text-xs text-danger-ink break-all">{{ $group->lock_error }}</div>
                         @endif
 
                         @if (! $cohort->offboarding_started_at && ! $group->lock_pending)
                             <div class="mt-auto">
                                 @if ($group->isLocked())
-                                    <x-buttons.primary wire:click="unlockGroup({{ $group->id }})">Ontgrendelen</x-buttons.primary>
+                                    <x-buttons.success wire:click="unlockGroup({{ $group->id }})">Ontgrendelen</x-buttons.success>
                                 @else
                                     <x-buttons.danger wire:click="lockGroup({{ $group->id }})">Vergrendelen</x-buttons.danger>
                                 @endif
@@ -460,8 +460,8 @@ hubot,Groep 2</pre>
                 @endforelse
             </div>
 
-            <details class="border-t pt-3">
-                <summary class="cursor-pointer text-sm text-gray-600">Projects voor de hele organisatie uitzetten</summary>
+            <details class="border-t border-ink/10 pt-3">
+                <summary>Projects voor de hele organisatie uitzetten</summary>
                 <div class="flex flex-col gap-2 mt-2 text-sm">
                     <p>
                         Als een Project op GitHub een "base role" heeft voor alle leden van de organisatie, kunnen studenten het blijven zien,
@@ -488,9 +488,9 @@ hubot,Groep 2</pre>
             <p>Na het examen: haal de studenten uit hun teams en uit {{ $cohort->organization }}, en archiveer de repositories zodat het werk bewaard blijft (alleen-lezen). Eigenaren van de organisatie worden nooit verwijderd.</p>
 
             <div class="flex flex-col gap-2">
-                <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="offboardOptions.remove_team_memberships" class="mt-1"> <span>Studenten uit hun groepsteam halen</span></label>
-                <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="offboardOptions.remove_org_membership" class="mt-1"> <span>Studenten uit {{ $cohort->organization }} halen (openstaande uitnodigingen worden ingetrokken)</span></label>
-                <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="offboardOptions.archive_repositories" class="mt-1"> <span>Repositories archiveren</span></label>
+                <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="offboardOptions.remove_team_memberships" class="checkbox mt-0.5"> <span>Studenten uit hun groepsteam halen</span></label>
+                <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="offboardOptions.remove_org_membership" class="checkbox mt-0.5"> <span>Studenten uit {{ $cohort->organization }} halen (openstaande uitnodigingen worden ingetrokken)</span></label>
+                <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="offboardOptions.archive_repositories" class="checkbox mt-0.5"> <span>Repositories archiveren</span></label>
             </div>
 
             <div>
@@ -503,8 +503,8 @@ hubot,Groep 2</pre>
                 <x-headings.section>Dit gaat er gebeuren</x-headings.section>
 
                 @if ($offboardPlan['warnings'])
-                    <div class="rounded-md bg-amber-50 border border-amber-200 p-3">
-                        <ul class="list-disc pl-5 text-sm text-amber-800">
+                    <div class="alert alert-warning">
+                        <ul class="list-disc pl-5 text-sm">
                             @foreach ($offboardPlan['warnings'] as $warning)
                                 <li>{{ $warning }}</li>
                             @endforeach
@@ -522,7 +522,7 @@ hubot,Groep 2</pre>
                                 @foreach ($offboardPlan['students'] as $entry)
                                     <li>
                                         <strong>{{ $entry['login'] }}</strong>
-                                        <ul class="list-disc pl-5 text-gray-600">
+                                        <ul class="list-disc pl-5 text-muted">
                                             @foreach ($entry['actions'] as $action)
                                                 <li>{{ $action['label'] }}</li>
                                             @endforeach
@@ -533,7 +533,7 @@ hubot,Groep 2</pre>
                         </div>
                         <div>
                             <strong>Repositories ({{ count($offboardPlan['groups']) }})</strong>
-                            <ul class="list-disc pl-5 text-gray-600">
+                            <ul class="list-disc pl-5 text-muted">
                                 @foreach ($offboardPlan['groups'] as $entry)
                                     @foreach ($entry['actions'] as $action)
                                         <li>{{ $action['label'] }}</li>
@@ -543,10 +543,10 @@ hubot,Groep 2</pre>
                         </div>
                     </div>
 
-                    <div class="flex flex-col gap-2 border-t pt-4">
-                        <label for="offboardConfirmation" class="font-medium">Typ <code>{{ $cohort->name }}</code> om te bevestigen</label>
-                        <input id="offboardConfirmation" type="text" wire:model="offboardConfirmation" class="p-2 border border-gray-300 rounded-md" autocomplete="off">
-                        @error('offboardConfirmation') <p class="text-red-500 italic">{{ $message }}</p> @enderror
+                    <div class="flex flex-col gap-2 border-t border-ink/10 pt-4">
+                        <label for="offboardConfirmation" class="label">Typ <code>{{ $cohort->name }}</code> om te bevestigen</label>
+                        <input id="offboardConfirmation" type="text" wire:model="offboardConfirmation" class="input" autocomplete="off">
+                        @error('offboardConfirmation') <p class="text-sm font-medium text-danger-ink">{{ $message }}</p> @enderror
                         <div>
                             <x-buttons.danger wire:click="confirmOffboarding">Examen afsluiten</x-buttons.danger>
                         </div>

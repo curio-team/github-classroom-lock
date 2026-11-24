@@ -3,8 +3,8 @@
 ])
 <div {{
     $attributes->class([
-        'flex flex-col bg-white shadow sm:rounded-lg text-gray-900',
-        'p-4 sm:p-8 gap-2' => !$tight,
+        'flex flex-col bg-white shadow-card rounded-lg text-ink',
+        'p-5 sm:p-8 gap-3' => !$tight,
     ])
 }}>
     {{ $slot }}

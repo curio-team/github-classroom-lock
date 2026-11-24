@@ -1,6 +1,6 @@
 <x-partials.header></x-partials.header>
 
-<div id="app" class="text-black">
+<div id="app">
     @include('layouts.nav')
 
     <main class="max-w-6xl mx-auto py-4 px-4">
