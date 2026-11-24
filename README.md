@@ -50,9 +50,13 @@ One GitHub App does both jobs: it makes all changes in the organization, and it 
 1. Go to **curio-summatief → Settings → Developer settings → GitHub Apps → New GitHub App**.
 2. Fill in:
    * **Homepage URL:** the app's URL
-   * **Callback URL:** `{APP_URL}/join/github/callback`. Add one per environment, e.g. `http://127.0.0.1:8000/...`
-     and the production URL. A GitHub App can have up to 10.
+   * **Redirect URI** (under *Identifying and authorizing users*; older screens call it *Callback URL*):
+     `{APP_URL}/join/github/callback`, matching `APP_URL` exactly. Use **Add redirect URI** to add one per
+     environment, e.g. `http://127.0.0.1:8000/join/github/callback` and
+     `https://github.curio.codes/join/github/callback`. A GitHub App can have up to 10.
+   * **Allow wildcard matching:** off. It would let tokens be sent to any subdomain or deeper path.
    * **Request user authorization (OAuth) during installation:** off
+   * **Enable Device Flow:** off
    * **Webhook → Active:** off
    * **Where can this GitHub App be installed?** Only on this account
 3. **Permissions:**
