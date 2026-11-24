@@ -1,6 +1,6 @@
 <p {{
     $attributes->merge([
-        'class' => 'mt-1 text-sm text-gray-600'
+        'class' => 'mt-1 text-sm text-muted'
     ])
 }}>
     {{ $slot }}

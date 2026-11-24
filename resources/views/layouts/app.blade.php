@@ -1,9 +1,9 @@
 <x-partials.header></x-partials.header>
 
-<div id="app" class="text-black">
+<div id="app">
     @include('layouts.nav')
 
-    <main class="max-w-4xl mx-auto py-4">
+    <main class="max-w-6xl mx-auto py-4 px-4">
         {{ $slot }}
     </main>
 </div>
@@ -35,6 +35,22 @@
             console.log('Request returned the following debug information:')
             console.log(@js(session()->get('debug')));
         @endif
+    });
+
+    // Toasts dispatched from Livewire components: $this->dispatch('notify', type: ..., message: ...)
+    document.addEventListener('livewire:init', function() {
+        Livewire.on('notify', function(event) {
+            const type = event.type ?? event[0]?.type ?? 'success';
+            const message = event.message ?? event[0]?.message ?? '';
+
+            if (type === 'error') {
+                window.Notyf.error(message);
+            } else if (type === 'warning') {
+                window.Notyf.open({ type: 'warning', message: message });
+            } else {
+                window.Notyf.success(message);
+            }
+        });
     });
 </script>
 

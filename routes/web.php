@@ -1,27 +1,40 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\JoinController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Route;
 
 /**
  *
- * SD Client Auth
+ * SD Client Auth (staff)
  *
  */
-Route::get('/login', function(){
-	return redirect('/sdclient/redirect');
+Route::get('/login', function () {
+    return redirect('/sdclient/redirect');
 })->name('login');
 
-Route::post('/logout', function(Request $request){
+Route::post('/logout', function (Request $request) {
     Auth::logout();
 
-	return redirect('/sdclient/logout');
+    return redirect('/sdclient/logout');
 })->name('logout');
 
-Route::get('/sdclient/ready', function(){
-	return redirect()->route('dashboard');
+Route::get('/sdclient/ready', function () {
+    return redirect()->route('dashboard');
+});
+
+/**
+ *
+ * Student onboarding (invite link + GitHub sign-in). No SD login required.
+ *
+ */
+Route::middleware('throttle:join')->group(function () {
+    // Registered before /join/{token} so "github" isn't treated as a token.
+    Route::get('/join/github/callback', [JoinController::class, 'callback'])->name('join.callback');
+    Route::get('/join/{token}', [JoinController::class, 'show'])->name('join.show');
+    Route::post('/join/{token}/github', [JoinController::class, 'redirect'])->name('join.redirect');
+    Route::get('/join/{token}/status', [JoinController::class, 'status'])->name('join.status');
 });
 
 /**
@@ -29,40 +42,35 @@ Route::get('/sdclient/ready', function(){
  * App
  *
  */
-
- Route::middleware(['guest'])->group(function () {
+Route::middleware(['guest'])->group(function () {
     Route::get('/', function () {
         return view('welcome');
     });
 });
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function(Request $request) {
-        if($request->user()->isTeacher()) {
-            return redirect()->route('dashboard.teacher');
-        } else {
-            return redirect()->route('dashboard.student');
+    Route::get('/dashboard', function (Request $request) {
+        if ($request->user()->isTeacher()) {
+            return redirect()->route('exams.index');
         }
+
+        return view('no-access');
     })->name('dashboard');
 
     Route::middleware(['teacher'])
         ->prefix('teacher')
         ->group(function () {
+            Route::get('/exams', \App\Livewire\ExamIndexPage::class)
+                ->name('exams.index');
+
+            Route::get('/exams/{cohort}', \App\Livewire\ExamPage::class)
+                ->name('exams.show');
+
+            Route::get('/audit-log', \App\Livewire\AuditLogPage::class)
+                ->name('audit-log');
+
+            // Old exam lock tool for teams created by GitHub Classroom.
             Route::get('/dashboard', \App\Livewire\TeacherDashboardPage::class)
                 ->name('dashboard.teacher');
-
-            // Remove after succesful migration of CurioGPT
-            // Route::get('/gpt-insights', \App\Livewire\TeacherGptInsightsPage::class)
-            //     ->name('dashboard.teacher-gpt');
         });
-
-    // Remove after succesful migration of CurioGPT
-    // Route::prefix('student')
-    //     ->group(function () {
-    //         Route::get('/dashboard', \App\Livewire\StudentDashboardPage::class)
-    //             ->name('dashboard.student');
-
-    //         Route::post('ai-request', [\App\Http\Controllers\ApiController::class, 'performPrompt'])
-    //             ->name('ai-request');
-    //     });
 });

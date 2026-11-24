@@ -1,5 +1,9 @@
 import './bootstrap';
 
+import.meta.glob([
+    '../img/**',
+]);
+
 import { Livewire, Alpine } from '../../vendor/livewire/livewire/dist/livewire.esm';
 import Clipboard from '@ryangjchandler/alpine-clipboard';
 import Tooltip from "@ryangjchandler/alpine-tooltip";
@@ -20,8 +24,17 @@ window.Notyf = new Notyf({
     },
     types: [
         {
+            type: 'success',
+            background: '#00B67A',
+        },
+        {
+            type: 'error',
+            background: '#F63030',
+        },
+        {
             type: 'warning',
-            background: 'orange',
+            background: '#FFCC00',
+            className: 'notyf__toast--warning',
             icon: {
                 className: 'notyf__icon--error',
                 tagName: 'i',
@@ -29,18 +42,3 @@ window.Notyf = new Notyf({
         },
     ],
 });
-
-import { Marked } from 'marked';
-import { markedHighlight } from 'marked-highlight';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/atom-one-dark.css';
-
-window.marked = new Marked(
-    markedHighlight({
-        langPrefix: 'hljs language-',
-        highlight(code, lang, info) {
-            const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-            return hljs.highlight(code, { language }).value;
-        }
-    })
-);

@@ -1,11 +1,11 @@
-<nav x-data="{ openSidebar: false }" class="bg-white shadow-sm py-4 px-8">
-    <x-content.stack-layout row class="items-center justify-between max-w-4xl mx-auto">
-        <a class="max-w-[100px] grow"
+<nav x-data="{ openSidebar: false }" class="bg-ink text-white py-4 px-4 sm:px-8">
+    <x-content.stack-layout row class="items-center justify-between max-w-6xl mx-auto">
+        <a class="shrink-0"
            href="{{ route('dashboard') }}">
-            <x-logos.light-logo />
+            <x-application-logo />
         </a>
 
-        <button class="block md:hidden"
+        <button class="block md:hidden text-white"
                 type="button"
                 @click="openSidebar = true"
                 aria-label="{{ __('Toggle navigation') }}">
@@ -13,9 +13,9 @@
                           height="32px" />
         </button>
 
-        <div class="md:!flex bg-white bottom-0 top-0 right-0 flex grow fixed md:static p-4 md:p-0 shadow-md md:shadow-none min-w-[50%] gap-4 flex-col md:flex-row"
+        <div class="md:flex! bg-ink bottom-0 top-0 right-0 z-40 flex grow fixed md:static p-4 md:p-0 shadow-card-hover md:shadow-none min-w-[50%] gap-4 flex-col md:flex-row"
             :class="{ 'hidden': !openSidebar }">
-            <button class="block md:hidden self-end"
+            <button class="block md:hidden self-end text-white"
                     type="button"
                     @click="openSidebar = false"
                     aria-label="{{ __('Toggle navigation') }}">
@@ -24,38 +24,26 @@
             </button>
 
             <!-- Left Side Of Navbar -->
-            <x-content.stack-layout row class="md:grow">
+            <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-6 md:grow md:pl-6">
                 @auth
-                    {{-- TODO: Remove after succesful migration of CurioGPT --}}
-                    {{-- <x-buttons.link
-                        href="{{ route('dashboard.student') }}">
-                        CurioGPT
-                    </x-buttons.link> --}}
-
                     @if (user()->isTeacher())
-                        <x-buttons.link
-                            href="{{ route('dashboard.teacher') }}">
-                            🔒 Dashboard
-                        </x-buttons.link>
-                        {{-- TODO: Remove after succesful migration of CurioGPT --}}
-                        {{-- <x-buttons.link
-                            href="{{ route('dashboard.teacher-gpt') }}">
-                            🔒 Overzicht CurioGPT
-                        </x-buttons.link> --}}
+                        <x-nav-link href="{{ route('exams.index') }}" :active="request()->routeIs('exams.*')">Examens</x-nav-link>
+                        <x-nav-link href="{{ route('audit-log') }}" :active="request()->routeIs('audit-log')">Auditlog</x-nav-link>
+                        <x-nav-link href="{{ route('dashboard.teacher') }}" :active="request()->routeIs('dashboard.teacher')" class="opacity-60">Oude Classroom-teams</x-nav-link>
                     @endif
                 @endauth
-            </x-content.stack-layout>
+            </div>
 
             <!-- Right Side Of Navbar -->
-            <x-content.stack-layout row class="items-center">
+            <div class="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
                 @guest
-                    <x-buttons.link href="{{ route('login') }}">{{ __('Inloggen') }}</x-buttons.link>
+                    <x-nav-link href="{{ route('login') }}">{{ __('Inloggen') }}</x-nav-link>
                 @else
-                    <x-buttons.link
+                    <x-nav-link
                         target="_blank"
                         href="{{ url('https://login.curio.codes') }}">
-                        {{ Auth::user()->name }} <span class="caret"></span>
-                    </x-buttons.link>
+                        {{ Auth::user()->name }}
+                    </x-nav-link>
 
                     <form action="{{ route('logout') }}"
                         method="POST">
@@ -65,7 +53,7 @@
                         </x-buttons.primary>
                     </form>
                 @endguest
-            </x-content.stack-layout>
+            </div>
         </div>
     </x-content.stack-layout>
 </nav>

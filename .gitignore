@@ -17,3 +17,6 @@ yarn-error.log
 /.idea
 /.vscode
 .phpunit.cache/
+*.pem
+# Throwaway key used only by the tests, safe to commit
+!tests/Fixtures/*.pem

@@ -1,5 +1,5 @@
 <div {{ $attributes->class([
-    'flex flex-col gap-2 p-2 border border-gray-300 rounded-md',
+    'flex flex-col gap-2 p-3 border border-ink/15 rounded-lg',
 ]) }}>
     {{ $slot }}
 </div>

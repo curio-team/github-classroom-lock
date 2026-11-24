@@ -19,7 +19,7 @@
     value="{{ old($name, $value ?? '') }}"
     {{ ($required ?? false) ? 'required' : '' }}
     {{ $attributes->class([
-        'p-2 border border-gray-300 rounded-md',
+        'input',
     ]) }}
     {{ $min ? "min={$min}" : '' }}
     {{ $max ? "max={$max}" : '' }}

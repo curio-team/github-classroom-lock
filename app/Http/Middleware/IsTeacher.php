@@ -15,10 +15,10 @@ class IsTeacher
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if($request->user()->isTeacher()) {
+        if ($request->user()?->isTeacher()) {
             return $next($request);
         }
 
-        return redirect()->route('student.home');
+        abort(403, 'Alleen voor docenten.');
     }
 }

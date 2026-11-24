@@ -1,9 +1,9 @@
 {{-- close button --}}
 <a {{
    $attributes->merge([
-    'class' => 'cursor-pointer text-gray-400 hover:text-gray-500 transition duration-150 ease-in-out',
+    'class' => 'cursor-pointer text-muted hover:text-ink transition duration-150 ease-in-out',
     ])}}>
-    <svg class="h-6 w-6 text-gray-400 hover:text-gray-500"
+    <svg class="h-6 w-6 text-muted hover:text-ink"
          fill="none"
          stroke="currentColor"
          viewBox="0 0 24 24"

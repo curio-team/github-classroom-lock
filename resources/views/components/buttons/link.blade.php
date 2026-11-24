@@ -1,6 +1,6 @@
 <a {{
     $attributes->merge([
-        'class' => 'underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+        'class' => 'text-sm font-bold text-primary hover:text-primary-dark rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40'
     ]);
 }}>
     {{ $slot }}

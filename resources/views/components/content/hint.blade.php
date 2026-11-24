@@ -1,5 +1,5 @@
 <span {{ $attributes->class([
-    'text-gray-400 text-sm italic'
+    'text-muted text-sm'
 ]) }}>
     {{ $slot }}
 </span>
