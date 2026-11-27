@@ -25,7 +25,7 @@
             <input type="text" x-model="group" list="group-names" class="input text-sm min-w-0 w-40" aria-label="Nieuwe groep voor {{ $student->github_login }}" autocomplete="off"
                 x-on:keydown.enter.prevent="run(() => $wire.moveStudent({{ $student->id }}, group))">
             <x-buttons.secondary tight x-on:click.prevent="run(() => $wire.moveStudent({{ $student->id }}, group))">Verplaatsen</x-buttons.secondary>
-            <x-buttons.danger tight x-on:click.prevent="if (confirm(@js($removeQuestion))) run(() => $wire.removeStudent({{ $student->id }}))">Verwijderen</x-buttons.danger>
+            <x-buttons.danger tight x-on:click.prevent="if (confirm({{ \Illuminate\Support\Js::from($removeQuestion) }})) run(() => $wire.removeStudent({{ $student->id }}))">Verwijderen</x-buttons.danger>
         </div>
         <span class="text-xs text-muted" x-show="busy">Bezig…</span>
         @if ($moveNote)
