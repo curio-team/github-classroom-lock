@@ -20,7 +20,9 @@ On the exam page, the examinator goes through five steps:
    issues and history are kept.
 5. **Afsluiten:** after the exam, students are removed from their teams and from `curio-summatief`, and the
    repositories are archived (read-only). You see exactly what will happen and confirm by typing the exam name.
-   Organization owners are never removed.
+   Organization owners are never removed. Once everything is graded, **Opruimen na het beoordelen** permanently
+   deletes the exam's Projects, repositories and teams from GitHub, with the same preview and confirmation.
+   Organization owners can restore a deleted repository for 90 days (**Settings → Deleted repositories**).
 
 Every change on GitHub is recorded in the **Auditlog**.
 
@@ -63,12 +65,12 @@ One GitHub App does both jobs: it makes all changes in the organization, and it 
 
    | Type | Permission | Access | Used for |
    | --- | --- | --- | --- |
-   | Repository | Administration | Read & write | Creating, locking and archiving repositories |
+   | Repository | Administration | Read & write | Creating, locking, archiving and deleting repositories |
    | Repository | Contents | Read & write | Creating repositories from a template |
    | Repository | Metadata | Read | (required) |
-   | Organization | Members | Read & write | Teams, invitations, memberships |
+   | Organization | Members | Read & write | Teams (creating and deleting), invitations, memberships |
    | Organization | Administration | Read & write | Base permission, organization-wide Projects switch |
-   | Organization | Projects | Read & write | Creating, linking and locking Projects |
+   | Organization | Projects | Read & write | Creating, linking, locking and deleting Projects |
 
 4. Create the app, then on its settings page:
    * Note the **App ID** and **Client ID**
@@ -99,6 +101,7 @@ group's repository. The exam page warns you if it isn't. Staff are owners, so th
 * A student removed from the list keeps their GitHub access. Close the exam (step 5) for them first if needed.
 * If GitHub won't let the app accept the invitation automatically, the student gets a button to accept it on
   github.com (one extra click).
+* Using a classic `GITHUB_TOKEN` instead of the App? Deleting repositories also needs its `delete_repo` scope.
 
 ## Development
 

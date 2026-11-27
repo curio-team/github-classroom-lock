@@ -220,7 +220,7 @@ hubot,Groep 2</pre>
                                 </td>
                                 <td>
                                     <span class="badge {{ $group->status->color() }}">{{ $group->status->label() }}</span>
-                                    @if ($group->status !== \App\Enums\GroupStatus::Provisioned)
+                                    @if (in_array($group->status, [\App\Enums\GroupStatus::Pending, \App\Enums\GroupStatus::Provisioning, \App\Enums\GroupStatus::Failed], true))
                                         <div class="flex flex-wrap gap-x-2 mt-1">
                                             @foreach (\App\Enums\ProvisioningStep::cases() as $provisioningStep)
                                                 <span @class([
@@ -238,13 +238,13 @@ hubot,Groep 2</pre>
                                 </td>
                                 <td>
                                     <div class="flex flex-wrap gap-x-3">
-                                        @if ($group->repository_url)
+                                        @if ($group->repository_url && $group->hasRepositoryOnGitHub())
                                             <a class="font-bold" target="_blank" href="{{ $group->repository_url }}">Repository</a>
                                         @endif
-                                        @if ($group->project_url)
+                                        @if ($group->project_url && $group->hasProjectOnGitHub())
                                             <a class="font-bold" target="_blank" href="{{ $group->project_url }}">Project</a>
                                         @endif
-                                        @if ($group->team_slug)
+                                        @if ($group->hasTeamOnGitHub())
                                             <a class="font-bold" target="_blank" href="https://github.com/orgs/{{ $cohort->organization }}/teams/{{ $group->team_slug }}">Team</a>
                                         @endif
                                     </div>
@@ -551,6 +551,84 @@ hubot,Groep 2</pre>
                             <x-buttons.danger wire:click="confirmOffboarding">Examen afsluiten</x-buttons.danger>
                         </div>
                         <x-content.hint>De uitnodigingslink wordt ingetrokken. Lukt iets niet, dan kun je dit veilig opnieuw uitvoeren.</x-content.hint>
+                    </div>
+                @endif
+            </x-content.section>
+        @endif
+
+        <x-content.section>
+            <x-headings.section>Opruimen na het beoordelen</x-headings.section>
+            <p>
+                Is alles beoordeeld? Verwijder dan de Projects, repositories en teams van dit examen definitief van GitHub.
+                Nog op GitHub: {{ $remainingOnGitHub['repositories'] }} repositories, {{ $remainingOnGitHub['projects'] }} Projects en {{ $remainingOnGitHub['teams'] }} teams.
+            </p>
+
+            @if (! $cohort->offboarding_started_at)
+                <x-content.hint>Sluit eerst het examen af (hierboven).</x-content.hint>
+            @elseif ($cohort->cleanup_pending)
+                <div class="alert alert-warning">Bezig met verwijderen. Deze pagina wordt vanzelf bijgewerkt.</div>
+            @elseif (array_sum($remainingOnGitHub) === 0)
+                <x-content.empty>Alles is van GitHub verwijderd.</x-content.empty>
+            @else
+                <div class="flex flex-col gap-2">
+                    <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="cleanupOptions.delete_projects" class="checkbox mt-0.5"> <span>Projects verwijderen</span></label>
+                    <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="cleanupOptions.delete_repositories" class="checkbox mt-0.5"> <span>Repositories verwijderen</span></label>
+                    <label class="flex gap-2 items-start"><input type="checkbox" wire:model.live="cleanupOptions.delete_teams" class="checkbox mt-0.5"> <span>Teams verwijderen</span></label>
+                </div>
+
+                <div>
+                    <x-buttons.secondary wire:click="previewCleanup">Bekijk wat er verwijderd wordt</x-buttons.secondary>
+                </div>
+            @endif
+
+            @foreach ($groups->filter(fn ($group) => $group->last_error && $group->status !== \App\Enums\GroupStatus::Failed) as $group)
+                <div class="text-sm text-danger-ink break-all"><strong>{{ $group->name }}:</strong> {{ $group->last_error }}</div>
+            @endforeach
+        </x-content.section>
+
+        @if ($cleanupPlan && $cohort->offboarding_started_at && ! $cohort->cleanup_pending)
+            <x-content.section>
+                <x-headings.section>Dit wordt definitief verwijderd</x-headings.section>
+
+                @if ($cleanupPlan['warnings'])
+                    <div class="alert alert-warning">
+                        <ul class="list-disc pl-5 text-sm">
+                            @foreach ($cleanupPlan['warnings'] as $warning)
+                                <li>{{ $warning }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if (! $cleanupPlan['groups'])
+                    <x-content.empty>Er is niets te verwijderen met deze keuze.</x-content.empty>
+                @else
+                    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                        @foreach ($cleanupPlan['groups'] as $entry)
+                            <div>
+                                <strong>{{ $entry['name'] }}</strong>
+                                <ul class="list-disc pl-5 text-muted">
+                                    @foreach ($entry['actions'] as $action)
+                                        <li>{{ $action['label'] }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="alert alert-danger text-sm">
+                        Dit kan niet ongedaan worden gemaakt vanuit deze app. Een eigenaar van {{ $cohort->organization }} kan een verwijderde
+                        repository nog 90 dagen terugzetten op GitHub (organisatie → Settings → Deleted repositories). Een verwijderd team is niet terug te halen.
+                    </div>
+
+                    <div class="flex flex-col gap-2 border-t border-ink/10 pt-4">
+                        <label for="cleanupConfirmation" class="label">Typ <code>{{ $cohort->name }}</code> om te bevestigen</label>
+                        <input id="cleanupConfirmation" type="text" wire:model="cleanupConfirmation" class="input" autocomplete="off">
+                        @error('cleanupConfirmation') <p class="text-sm font-medium text-danger-ink">{{ $message }}</p> @enderror
+                        <div>
+                            <x-buttons.danger wire:click="confirmCleanup">Definitief verwijderen</x-buttons.danger>
+                        </div>
+                        <x-content.hint>Lukt iets niet, dan kun je dit veilig opnieuw uitvoeren.</x-content.hint>
                     </div>
                 @endif
             </x-content.section>

@@ -59,7 +59,7 @@ class Offboarder
 
             $actions = [];
 
-            if ($options['remove_team_memberships'] && $student->group?->team_slug) {
+            if ($options['remove_team_memberships'] && $student->group?->hasTeamOnGitHub()) {
                 $actions[] = ['type' => 'remove_team', 'label' => "Verwijderen uit team {$student->group->team_slug}"];
             }
 
@@ -86,7 +86,7 @@ class Offboarder
 
         if ($options['archive_repositories']) {
             foreach ($cohort->groups as $group) {
-                if ($group->repository_name && $group->archived_at === null) {
+                if ($group->hasRepositoryOnGitHub() && $group->archived_at === null) {
                     $groups[] = ['id' => $group->id, 'name' => $group->name, 'actions' => [
                         ['type' => 'archive_repository', 'label' => "Repository {$group->repository_name} archiveren"],
                     ]];

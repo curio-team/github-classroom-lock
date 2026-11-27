@@ -37,6 +37,9 @@ use Illuminate\Support\Str;
  * @property ?Carbon $locked_at
  * @property bool $lock_pending
  * @property ?string $lock_error
+ * @property ?Carbon $team_deleted_at
+ * @property ?Carbon $repository_deleted_at
+ * @property ?Carbon $project_deleted_at
  * @property-read Cohort $cohort
  */
 class Group extends Model
@@ -62,6 +65,9 @@ class Group extends Model
             'archived_at' => 'datetime',
             'locked_at' => 'datetime',
             'lock_pending' => 'boolean',
+            'team_deleted_at' => 'datetime',
+            'repository_deleted_at' => 'datetime',
+            'project_deleted_at' => 'datetime',
         ];
     }
 
@@ -105,6 +111,21 @@ class Group extends Model
     public function isLocked(): bool
     {
         return $this->locked_at !== null;
+    }
+
+    public function hasRepositoryOnGitHub(): bool
+    {
+        return $this->repository_name !== null && $this->repository_deleted_at === null;
+    }
+
+    public function hasTeamOnGitHub(): bool
+    {
+        return $this->team_slug !== null && $this->team_deleted_at === null;
+    }
+
+    public function hasProjectOnGitHub(): bool
+    {
+        return $this->project_node_id !== null && $this->project_deleted_at === null;
     }
 
     public function isReadyForStudents(): bool

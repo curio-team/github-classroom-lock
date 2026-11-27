@@ -275,6 +275,7 @@ class FakeGitHub
             (bool) preg_match("#^GET /orgs/{$org}/teams/([^/]+)$#", $route, $m) => isset($this->teams[$m[1]])
                 ? Http::response($this->teamJson($this->teams[$m[1]]))
                 : Http::response(['message' => 'Not Found'], 404),
+            (bool) preg_match("#^DELETE /orgs/{$org}/teams/([^/]+)$#", $route, $m) => $this->deleteFrom('teams', $m[1]),
             (bool) preg_match("#^PUT /orgs/{$org}/teams/([^/]+)/repos/{$org}/([^/]+)$#", $route, $m) => $this->grantRepo($m[1], $m[2], $data),
             (bool) preg_match("#^DELETE /orgs/{$org}/teams/([^/]+)/repos/{$org}/([^/]+)$#", $route, $m) => $this->revokeRepo($m[1], $m[2]),
             (bool) preg_match("#^(GET|PUT|DELETE) /orgs/{$org}/teams/([^/]+)/memberships/([^/]+)$#", $route, $m) => $this->teamMembership($m[1], $m[2], $m[3]),
@@ -284,6 +285,7 @@ class FakeGitHub
                 ? Http::response($this->repos[$m[1]])
                 : Http::response(['message' => 'Not Found'], 404),
             (bool) preg_match("#^PATCH /repos/{$org}/([^/]+)$#", $route, $m) => $this->updateRepo($m[1], $data),
+            (bool) preg_match("#^DELETE /repos/{$org}/([^/]+)$#", $route, $m) => $this->deleteFrom('repos', $m[1]),
             $route === "POST /orgs/{$this->org}/repos" => $this->createRepo($data['name'], (bool) ($data['private'] ?? false)),
             (bool) preg_match('#^POST /repos/([^/]+)/([^/]+)/generate$#', $route, $m) => $this->createRepo($data['name'], (bool) ($data['private'] ?? false), "{$m[1]}/{$m[2]}"),
 
@@ -543,6 +545,20 @@ class FakeGitHub
         return Http::response(['state' => $this->teams[$slug]['members'][$user['id']], 'role' => 'member']);
     }
 
+    /**
+     * DELETE of a team or repository: 204, or 404 when it doesn't exist.
+     */
+    private function deleteFrom(string $collection, string $key)
+    {
+        if (! isset($this->{$collection}[$key])) {
+            return Http::response(['message' => 'Not Found'], 404);
+        }
+
+        unset($this->{$collection}[$key]);
+
+        return Http::response(null, 204);
+    }
+
     /*
      * Repositories
      */
@@ -606,6 +622,7 @@ class FakeGitHub
             'mutation:LinkProjectToRepository' => $this->link($variables['input']['projectId'], 'repositories', $variables['input']['repositoryId'], 'linkProjectV2ToRepository', 'repository'),
             'mutation:LinkProjectToTeam' => $this->link($variables['input']['projectId'], 'teams', $variables['input']['teamId'], 'linkProjectV2ToTeam', 'team'),
             'mutation:SetProjectCollaborators' => $this->setCollaborators($variables['input']),
+            'mutation:DeleteProject' => $this->deleteProject($variables['input']['projectId']),
             default => null,
         };
 
@@ -674,6 +691,17 @@ class FakeGitHub
         $this->projects[$projectId][$type][] = $nodeId;
 
         return [$field => [$returns => ['id' => $nodeId]]];
+    }
+
+    private function deleteProject(string $id): array
+    {
+        if (! isset($this->projects[$id])) {
+            return ['__error' => "Could not resolve to a node with the global id of '{$id}'"];
+        }
+
+        unset($this->projects[$id]);
+
+        return ['deleteProjectV2' => ['projectV2' => ['id' => $id]]];
     }
 
     private function setCollaborators(array $input): array

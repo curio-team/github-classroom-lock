@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\GroupStatus;
 use App\Enums\StudentStatus;
 use App\GitHub\GitHubException;
+use App\Jobs\CleanUpCohort;
 use App\Jobs\OffboardCohort;
 use App\Jobs\ProvisionCohort;
 use App\Jobs\ProvisionGroup;
@@ -13,6 +14,7 @@ use App\Models\Group;
 use App\Services\Audit;
 use App\Services\Exam\ExamLock;
 use App\Services\Join\JoinService;
+use App\Services\Offboarding\GitHubCleanup;
 use App\Services\Offboarding\Offboarder;
 use App\Services\OrganizationChecks;
 use App\Services\Roster\RosterImporter;
@@ -63,6 +65,13 @@ class ExamPage extends Component
     public bool $showOffboardPlan = false;
 
     public string $offboardConfirmation = '';
+
+    // Finish (cleanup after grading)
+    public array $cleanupOptions = GitHubCleanup::OPTIONS;
+
+    public bool $showCleanupPlan = false;
+
+    public string $cleanupConfirmation = '';
 
     public function mount(Cohort $cohort): void
     {
@@ -335,12 +344,51 @@ class ExamPage extends Component
         $this->notify('success', 'Het examen wordt afgesloten.');
     }
 
+    /*
+     * 5b. Clean up GitHub after grading
+     */
+
+    public function previewCleanup(): void
+    {
+        $this->showCleanupPlan = true;
+        $this->cleanupConfirmation = '';
+    }
+
+    public function confirmCleanup(): void
+    {
+        $this->resetErrorBag('cleanupConfirmation');
+
+        // Deleting during the exam would destroy the students' work.
+        if (! $this->cohort->offboarding_started_at || $this->cohort->cleanup_pending) {
+            return;
+        }
+
+        if (trim($this->cleanupConfirmation) !== $this->cohort->name) {
+            $this->addError('cleanupConfirmation', 'Typ de naam van het examen precies over om te bevestigen.');
+
+            return;
+        }
+
+        $options = GitHubCleanup::normalizeOptions($this->cleanupOptions);
+
+        Audit::record('cohort.cleanup_confirmed', $this->cohort, ['options' => $options]);
+
+        $this->cohort->cleanup_pending = true;
+        $this->cohort->save();
+
+        CleanUpCohort::dispatch($this->cohort, $options);
+
+        $this->showCleanupPlan = false;
+        $this->cleanupConfirmation = '';
+        $this->notify('success', 'Bezig met verwijderen van GitHub.');
+    }
+
     private function notify(string $type, string $message): void
     {
         $this->dispatch('notify', type: $type, message: $message);
     }
 
-    public function render(OrganizationChecks $checks, Offboarder $offboarder, ExamLock $lock)
+    public function render(OrganizationChecks $checks, Offboarder $offboarder, GitHubCleanup $cleanup, ExamLock $lock)
     {
         $this->cohort->refresh();
 
@@ -392,8 +440,11 @@ class ExamPage extends Component
             'orgProblems' => array_values(array_filter($orgChecks, fn ($check) => in_array($check['level'], ['error', 'warning'], true))),
             'organizationProjects' => $organizationProjects,
             'offboardPlan' => $this->showOffboardPlan ? $offboarder->plan($this->cohort, $this->offboardOptions) : null,
+            'cleanupPlan' => $this->showCleanupPlan ? $cleanup->plan($this->cohort, $this->cleanupOptions) : null,
+            'remainingOnGitHub' => GitHubCleanup::remaining($groups),
             'isBusy' => $groups->contains(fn (Group $group) => $group->status === GroupStatus::Provisioning || $group->lock_pending)
-                || ($this->cohort->offboarding_started_at !== null && $this->cohort->offboarded_at === null),
+                || ($this->cohort->offboarding_started_at !== null && $this->cohort->offboarded_at === null)
+                || $this->cohort->cleanup_pending,
         ]);
     }
 }

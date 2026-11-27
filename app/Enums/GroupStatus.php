@@ -9,6 +9,7 @@ enum GroupStatus: string
     case Provisioned = 'provisioned';
     case Failed = 'failed';
     case Archived = 'archived';
+    case Deleted = 'deleted';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum GroupStatus: string
             self::Provisioned => 'Klaar',
             self::Failed => 'Mislukt',
             self::Archived => 'Gearchiveerd',
+            self::Deleted => 'Verwijderd van GitHub',
         };
     }
 
@@ -28,7 +30,7 @@ enum GroupStatus: string
             self::Provisioning => 'badge-warning',
             self::Provisioned => 'badge-success',
             self::Failed => 'badge-danger',
-            self::Archived => 'badge-secondary',
+            self::Archived, self::Deleted => 'badge-secondary',
         };
     }
 }

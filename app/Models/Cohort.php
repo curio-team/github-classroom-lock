@@ -23,6 +23,7 @@ use Illuminate\Support\Str;
  * @property ?Carbon $invite_revoked_at
  * @property ?Carbon $offboarding_started_at
  * @property ?Carbon $offboarded_at
+ * @property bool $cleanup_pending
  */
 class Cohort extends Model
 {
@@ -49,6 +50,7 @@ class Cohort extends Model
             'offboarding_started_at' => 'datetime',
             'offboarded_at' => 'datetime',
             'template_project_number' => 'integer',
+            'cleanup_pending' => 'boolean',
         ];
     }
 
