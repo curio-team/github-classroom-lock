@@ -510,6 +510,7 @@ class ExamPage extends Component
 
         $provisioned = $activeGroups->where('status', GroupStatus::Provisioned)->count();
         $lockedCount = $activeGroups->filter->isLocked()->count();
+        $updatingGroupCount = $activeGroups->filter(fn (Group $group) => $group->lock_pending || $group->isRestoringAssignments())->count();
 
         return view('livewire.exam-page', [
             'steps' => self::STEPS,
@@ -526,6 +527,7 @@ class ExamPage extends Component
             'provisionedCount' => $provisioned,
             'lockedCount' => $lockedCount,
             'activeGroupCount' => $activeGroups->count(),
+            'updatingGroupCount' => $updatingGroupCount,
             'preview' => RosterPreview::retrieve($this->previewKey),
             'orgChecks' => $orgChecks,
             'orgProblems' => array_values(array_filter($orgChecks, fn ($check) => in_array($check['level'], ['error', 'warning'], true))),
@@ -533,7 +535,8 @@ class ExamPage extends Component
             'offboardPlan' => $this->showOffboardPlan ? $offboarder->plan($this->cohort, $this->offboardOptions) : null,
             'cleanupPlan' => $this->showCleanupPlan ? $cleanup->plan($this->cohort, $this->cleanupOptions) : null,
             'remainingOnGitHub' => GitHubCleanup::remaining($groups),
-            'isBusy' => $groups->contains(fn (Group $group) => $group->status === GroupStatus::Provisioning || $group->lock_pending)
+            'isBusy' => $updatingGroupCount > 0
+                || $groups->contains(fn (Group $group) => $group->status === GroupStatus::Provisioning || $group->lock_pending)
                 || ($this->cohort->offboarding_started_at !== null && $this->cohort->offboarded_at === null)
                 || $this->cohort->cleanup_pending
                 || $this->cohort->backup_status === 'pending',

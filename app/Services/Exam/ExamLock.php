@@ -6,6 +6,7 @@ use App\GitHub\GitHub;
 use App\GitHub\GitHubException;
 use App\GitHub\RateLimitedException;
 use App\Jobs\ApplyGroupLock;
+use App\Jobs\RestoreIssueAssignments;
 use App\Models\Cohort;
 use App\Models\Group;
 use App\Services\Audit;
@@ -14,15 +15,18 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Locking an exam group revokes its team's access to the group repository
- * and Project; unlocking restores it. Students stay members of the team, so
- * issue assignments and history are kept (removing members, as the old tool
- * did, unassigns their tasks).
+ * and Project; unlocking restores it. Students stay members of the team.
+ *
+ * Losing access to the repository makes GitHub unassign them from its issues
+ * and pull requests, so the assignments are stored before locking and
+ * restored after unlocking (see IssueAssignments).
  */
 class ExamLock
 {
     public function __construct(
         private readonly GitHub $github,
         private readonly GroupProvisioner $provisioner,
+        private readonly IssueAssignments $assignments,
     ) {
     }
 
@@ -80,6 +84,10 @@ class ExamLock
             return true;
         }
 
+        if ($locked) {
+            $this->saveAssignments($group);
+        }
+
         try {
             $this->provisioner->ensureRepositoryAccess($group);
             $this->provisioner->ensureProjectAccess($group);
@@ -104,7 +112,36 @@ class ExamLock
             'repository' => $group->repository_name,
         ]);
 
+        if (! $locked && $group->assignment_snapshot) {
+            // A new attempt: an earlier restore error no longer applies.
+            $group->assignment_error = null;
+            $group->save();
+
+            RestoreIssueAssignments::dispatch($group);
+        }
+
         return true;
+    }
+
+    /**
+     * Stores the issue assignments before the access (and with it, the
+     * assignments) is removed. A failure doesn't stop the lock: closing the
+     * exam matters more than keeping the assignments.
+     *
+     * @throws RateLimitedException
+     */
+    private function saveAssignments(Group $group): void
+    {
+        try {
+            $this->assignments->snapshot($group);
+        } catch (RateLimitedException $e) {
+            throw $e;
+        } catch (GitHubException $e) {
+            $group->assignment_error = 'Toewijzingen van issues bewaren mislukt: ' . IssueAssignments::reason($e);
+            $group->save();
+
+            Audit::record('group.assignments_save_failed', $group, ['error' => $e->reason()]);
+        }
     }
 
     /*

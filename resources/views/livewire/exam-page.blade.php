@@ -456,19 +456,36 @@ hubot,Groep 2</pre>
                     <x-headings.section>Tijdens het examen</x-headings.section>
                     <p class="text-sm text-muted">
                         Groepen staan vergrendeld tot je ze hier ontgrendelt. Ontgrendel bij de start van het examen, vergrendel aan het eind van de dag.
-                        Een vergrendelde groep kan niet bij zijn repository en Project; de studenten blijven wel in hun team, zodat toegewezen taken behouden blijven.
+                        Een vergrendelde groep kan niet bij zijn repository en Project; de studenten blijven wel in hun team.
+                        GitHub haalt ze dan van hun issues af, dus wie waaraan was toegewezen wordt bij het vergrendelen bewaard en bij het ontgrendelen teruggezet.
+                        Dat kan per groep even duren.
                     </p>
+                    @if ($updatingGroupCount > 0)
+                        <p class="text-sm font-bold mt-1 flex items-center gap-2">
+                            <x-icons.spinner />
+                            {{ $updatingGroupCount }} {{ $updatingGroupCount === 1 ? 'groep wordt' : 'groepen worden' }} bijgewerkt op GitHub…
+                        </p>
+                    @endif
                 </div>
                 @if ($activeGroupCount > 0 && ! $cohort->offboarding_started_at)
                     <div class="flex gap-2 shrink-0">
-                        <x-buttons.danger big x-on:click="if (confirm('Alle groepen vergrendelen?')) $wire.lockAll()">🔒 Alles vergrendelen</x-buttons.danger>
-                        <x-buttons.success big x-on:click="if (confirm('Alle groepen ontgrendelen?')) $wire.unlockAll()">🔓 Alles ontgrendelen</x-buttons.success>
+                        <x-buttons.danger big x-on:click="if (confirm('Alle groepen vergrendelen?')) $wire.lockAll()"
+                                          wire:loading.attr="aria-disabled" wire:loading.class="pointer-events-none" wire:target="lockAll, unlockAll">
+                            <x-icons.spinner wire:loading wire:target="lockAll" />
+                            🔒 Alles vergrendelen
+                        </x-buttons.danger>
+                        <x-buttons.success big x-on:click="if (confirm('Alle groepen ontgrendelen?')) $wire.unlockAll()"
+                                           wire:loading.attr="aria-disabled" wire:loading.class="pointer-events-none" wire:target="lockAll, unlockAll">
+                            <x-icons.spinner wire:loading wire:target="unlockAll" />
+                            🔓 Alles ontgrendelen
+                        </x-buttons.success>
                     </div>
                 @endif
             </div>
 
             <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 @forelse ($groups->whereNull('archived_at') as $group)
+                    @php($toggle = ($group->isLocked() ? 'unlockGroup' : 'lockGroup') . '(' . $group->id . ')')
                     <div wire:key="lock-{{ $group->id }}" @class([
                         'rounded-lg border-2 p-4 flex flex-col gap-2',
                         'border-danger/40 bg-white' => $group->isLocked(),
@@ -478,7 +495,10 @@ hubot,Groep 2</pre>
                             <strong>{{ $group->name }}</strong>
                             <span class="text-sm font-bold">
                                 @if ($group->lock_pending)
-                                    ⏳ {{ $group->isLocked() ? 'Vergrendelen…' : 'Ontgrendelen…' }}
+                                    <span class="flex items-center gap-1.5">
+                                        <x-icons.spinner />
+                                        {{ $group->isLocked() ? 'Vergrendelen…' : 'Ontgrendelen…' }}
+                                    </span>
                                 @else
                                     {{ $group->isLocked() ? '🔒 Vergrendeld' : '🔓 Open' }}
                                 @endif
@@ -494,17 +514,37 @@ hubot,Groep 2</pre>
                             @endforeach
                         </ul>
 
+                        @if ($group->isRestoringAssignments())
+                            <div class="text-xs flex items-center gap-1.5">
+                                <x-icons.spinner width="12px" height="12px" />
+                                Toewijzingen van issues terugzetten…
+                            </div>
+                        @elseif ($group->isLocked() && ! $group->lock_pending && $group->assignment_snapshot)
+                            @php($saved = \App\Services\Exam\IssueAssignments::count($group->assignment_snapshot))
+                            <div class="text-xs text-muted">📌 {{ $saved }} {{ $saved === 1 ? 'toewijzing' : 'toewijzingen' }} van issues bewaard</div>
+                        @endif
+
                         @if ($group->lock_error)
                             <div class="text-xs text-danger-ink break-all">{{ $group->lock_error }}</div>
                         @endif
 
+                        @if ($group->assignment_error)
+                            <div class="text-xs text-warning-ink break-all">{{ $group->assignment_error }}</div>
+                        @endif
+
                         @if (! $cohort->offboarding_started_at && ! $group->lock_pending)
-                            <div class="mt-auto">
-                                @if ($group->isLocked())
-                                    <x-buttons.success wire:click="unlockGroup({{ $group->id }})">Ontgrendelen</x-buttons.success>
-                                @else
-                                    <x-buttons.danger wire:click="lockGroup({{ $group->id }})">Vergrendelen</x-buttons.danger>
-                                @endif
+                            <div class="mt-auto" wire:loading.class="pointer-events-none opacity-40" wire:target="lockAll, unlockAll">
+                                <span class="text-sm font-bold items-center gap-1.5" wire:loading.flex wire:target="{{ $toggle }}">
+                                    <x-icons.spinner />
+                                    Bezig…
+                                </span>
+                                <span wire:loading.remove wire:target="{{ $toggle }}">
+                                    @if ($group->isLocked())
+                                        <x-buttons.success wire:click="{{ $toggle }}">Ontgrendelen</x-buttons.success>
+                                    @else
+                                        <x-buttons.danger wire:click="{{ $toggle }}">Vergrendelen</x-buttons.danger>
+                                    @endif
+                                </span>
                             </div>
                         @endif
                     </div>

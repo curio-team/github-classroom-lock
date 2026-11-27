@@ -207,6 +207,160 @@ class ExamLockTest extends TestCase
         $this->assertSame('active', $this->github->teamMembershipState('sd1a-2026-groep-1', 'alice'));
     }
 
+    /*
+     * Issue assignments: GitHub unassigns people who lose access to a repository.
+     */
+
+    private const REPO = 'sd1a-2026-groep-1';
+
+    public function test_issue_assignments_are_saved_when_locking_and_restored_when_unlocking(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $group = $exam->groups()->where('name', 'Groep 1')->first();
+        $this->github->addUser('docent');
+        $this->github->makeOrgMember('docent', 'admin');
+        $task = $this->github->addIssue(self::REPO, ['alice', 'docent']);
+        $unassigned = $this->github->addIssue(self::REPO);
+        $pullRequest = $this->github->addIssue(self::REPO, ['alice']);
+
+        $component = Livewire::actingAs($this->teacher())
+            ->test(ExamPage::class, ['cohort' => $exam, 'step' => 'exam'])
+            ->call('lockGroup', $group->id)
+            ->assertSee('2 toewijzingen van issues bewaard');
+
+        // GitHub took alice off; the owner kept access and stays assigned.
+        $this->assertSame(['docent'], $this->github->issueAssignees(self::REPO, $task));
+        $this->assertSame([], $this->github->issueAssignees(self::REPO, $pullRequest));
+        $this->assertSame([$task => ['alice'], $pullRequest => ['alice']], $group->fresh()->assignment_snapshot);
+
+        $component->call('unlockGroup', $group->id)->assertDontSee('van issues bewaard')->assertDontSee('terugzetten');
+
+        $this->assertSame(['docent', 'alice'], $this->github->issueAssignees(self::REPO, $task));
+        $this->assertSame([], $this->github->issueAssignees(self::REPO, $unassigned));
+        $this->assertSame(['alice'], $this->github->issueAssignees(self::REPO, $pullRequest));
+        $this->assertNull($group->fresh()->assignment_snapshot);
+        $this->assertNull($group->fresh()->assignment_error);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'group.assignments_saved']);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'group.assignments_restored']);
+    }
+
+    public function test_a_retried_lock_keeps_the_assignments_saved_by_the_first_attempt(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $group = $exam->groups()->where('name', 'Groep 1')->first();
+        $task = $this->github->addIssue(self::REPO, ['alice']);
+
+        // The repository access is revoked (and alice unassigned), then the Project fails.
+        $this->github->failNext('SetProjectCollaborators', 502, ['message' => 'Bad Gateway']);
+        $component = Livewire::actingAs($this->teacher())
+            ->test(ExamPage::class, ['cohort' => $exam, 'step' => 'exam'])
+            ->call('lockGroup', $group->id)
+            ->assertSee('Vergrendelen mislukt');
+        $this->assertSame([], $this->github->issueAssignees(self::REPO, $task));
+
+        // The retry finds nobody assigned, but doesn't forget alice.
+        $component->call('lockAll');
+        $this->assertSame([$task => ['alice']], $group->fresh()->assignment_snapshot);
+
+        $component->call('unlockAll');
+        $this->assertSame(['alice'], $this->github->issueAssignees(self::REPO, $task));
+    }
+
+    public function test_assignments_github_removes_late_are_restored_by_the_delayed_check(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $group = $exam->groups()->where('name', 'Groep 1')->first();
+        $task = $this->github->addIssue(self::REPO, ['alice']);
+        $this->github->unassignDelay = 1;
+
+        $lock = $this->app->make(ExamLock::class);
+        $lock->setLocked($group, true);
+
+        // Unlocked again before GitHub got round to unassigning: the first run
+        // finds everything in place, the delayed check doesn't.
+        $lock->setLocked($group->fresh(), false);
+
+        $this->assertSame(['alice'], $this->github->issueAssignees(self::REPO, $task));
+        $this->assertSame(1, $this->github->count('POST /repos/test-org/' . self::REPO . '/issues/1/assignees'));
+        $this->assertNull($group->fresh()->assignment_snapshot);
+    }
+
+    public function test_students_who_left_the_team_are_not_assigned_again(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $group = $exam->groups()->where('name', 'Groep 1')->first();
+        $task = $this->github->addIssue(self::REPO, ['alice']);
+        $lock = $this->app->make(ExamLock::class);
+
+        $lock->setLocked($group, true);
+        unset($this->github->teams[self::REPO]['members'][$this->github->user('alice')['id']]);
+        $lock->setLocked($group->fresh(), false);
+
+        $this->assertSame([], $this->github->issueAssignees(self::REPO, $task));
+        $this->assertSame(0, $this->github->count('POST /repos/.*/assignees'));
+        $this->assertNull($group->fresh()->assignment_snapshot);
+    }
+
+    public function test_the_lock_goes_ahead_when_the_assignments_cannot_be_saved(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $group = $exam->groups()->where('name', 'Groep 1')->first();
+        $this->github->failNext('GET /repos/test-org/' . self::REPO . '/issues', 403, ['message' => 'Resource not accessible by integration']);
+
+        Livewire::actingAs($this->teacher())
+            ->test(ExamPage::class, ['cohort' => $exam, 'step' => 'exam'])
+            ->call('lockGroup', $group->id)
+            ->assertSee('🔒 Vergrendeld')
+            ->assertSee('Toewijzingen van issues bewaren mislukt')
+            ->assertSee('Heeft de GitHub App de rechten Issues en Pull requests');
+
+        $this->assertNull($this->github->teamRepoPermission(self::REPO, self::REPO));
+        $this->assertNull($group->fresh()->lock_error);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'group.assignments_save_failed']);
+    }
+
+    public function test_assignments_that_cannot_be_restored_are_reported_and_kept(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $group = $exam->groups()->where('name', 'Groep 1')->first();
+        $task = $this->github->addIssue(self::REPO, ['alice']);
+        $component = Livewire::actingAs($this->teacher())
+            ->test(ExamPage::class, ['cohort' => $exam, 'step' => 'exam'])
+            ->call('lockGroup', $group->id);
+
+        $this->github->failNext('POST /repos/.*/assignees', 403, ['message' => 'Resource not accessible by integration'], times: 3);
+        $component->call('unlockGroup', $group->id)
+            ->assertSee('🔓 Open')
+            ->assertSee('Toewijzingen van issues terugzetten mislukt')
+            ->assertDontSee('Toewijzingen van issues terugzetten…');
+
+        $this->assertSame([$task => ['alice']], $group->fresh()->assignment_snapshot);
+        $this->assertSame(3, $this->github->count('POST /repos/.*/assignees'));
+        $this->assertDatabaseHas('audit_logs', ['action' => 'group.assignments_restore_failed']);
+
+        // The next lock and unlock try again.
+        $component->call('lockGroup', $group->id)->call('unlockGroup', $group->id)->assertDontSee('mislukt');
+        $this->assertSame(['alice'], $this->github->issueAssignees(self::REPO, $task));
+    }
+
+    public function test_the_page_shows_and_polls_groups_that_are_being_updated(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $group = $exam->groups()->where('name', 'Groep 1')->first();
+        $group->forceFill(['assignment_snapshot' => [1 => ['alice']]])->save();
+        $exam->groups()->where('name', 'Groep 2')->update(['lock_pending' => true, 'locked_at' => now()]);
+
+        Livewire::actingAs($this->teacher())
+            ->test(ExamPage::class, ['cohort' => $exam, 'step' => 'exam'])
+            ->assertSee('Toewijzingen van issues terugzetten…')
+            ->assertSee('Vergrendelen…')
+            ->assertSee('2 groepen worden bijgewerkt op GitHub…')
+            ->assertSeeHtml('wire:poll.3s')
+            // Clicked buttons are replaced by a spinner until the request is done.
+            ->assertSeeHtml('wire:target="lockGroup(' . $group->id . ')"')
+            ->assertSeeHtml('wire:target="lockAll, unlockAll"');
+    }
+
     public function test_the_organization_wide_projects_switch(): void
     {
         $exam = $this->examWithJoinedStudents();

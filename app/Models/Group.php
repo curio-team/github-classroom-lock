@@ -37,6 +37,8 @@ use Illuminate\Support\Str;
  * @property ?Carbon $locked_at
  * @property bool $lock_pending
  * @property ?string $lock_error
+ * @property ?array<int, array<int, string>> $assignment_snapshot issue number => logins, see IssueAssignments
+ * @property ?string $assignment_error
  * @property ?Carbon $team_deleted_at
  * @property ?Carbon $repository_deleted_at
  * @property ?Carbon $project_deleted_at
@@ -65,6 +67,7 @@ class Group extends Model
             'archived_at' => 'datetime',
             'locked_at' => 'datetime',
             'lock_pending' => 'boolean',
+            'assignment_snapshot' => 'array',
             'team_deleted_at' => 'datetime',
             'repository_deleted_at' => 'datetime',
             'project_deleted_at' => 'datetime',
@@ -122,6 +125,16 @@ class Group extends Model
     public function isLocked(): bool
     {
         return $this->locked_at !== null;
+    }
+
+    /**
+     * Unlocked, and RestoreIssueAssignments is still assigning students to
+     * their issues again (or checking that GitHub kept them).
+     */
+    public function isRestoringAssignments(): bool
+    {
+        return ! $this->isLocked() && ! $this->lock_pending && $this->archived_at === null
+            && $this->assignment_snapshot && $this->assignment_error === null;
     }
 
     public function hasRepositoryOnGitHub(): bool

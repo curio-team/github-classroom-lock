@@ -121,6 +121,16 @@ return [
     ],
 
     /*
+     * Restoring issue assignments after unlocking (see IssueAssignments):
+     * how often to check that everyone is assigned again, and how many
+     * seconds to wait between checks.
+     */
+    'assignments' => [
+        'attempts' => (int) env('GITHUB_ASSIGNMENT_ATTEMPTS', 3),
+        'verify_delay' => (int) env('GITHUB_ASSIGNMENT_VERIFY_DELAY', 60),
+    ],
+
+    /*
      * After a student accepts their invitation, poll this many times for the
      * organization membership to become active before telling them to refresh.
      */

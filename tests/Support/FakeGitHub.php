@@ -40,6 +40,19 @@ class FakeGitHub
     /** @var array<string, array> node ID => project */
     public array $projects = [];
 
+    /** @var array<string, array<int, array{number: int, assignees: array<int, string>}>> repository name => issue number => issue (and pull requests) */
+    public array $issues = [];
+
+    /**
+     * Like GitHub, revoking a team's repository access unassigns its members
+     * from the repository's issues. GitHub does that in the background: with
+     * a delay, it only happens after this many more issue listings.
+     */
+    public int $unassignDelay = 0;
+
+    /** @var array<int, array{repo: string, logins: array<int, string>, countdown: int}> */
+    private array $pendingUnassignments = [];
+
     /** @var array<int, string> template project number => node ID */
     public array $templateProjects = [];
 
@@ -115,6 +128,27 @@ class FakeGitHub
     public function failNext(string $pattern, int $status = 500, array $body = ['message' => 'Server Error'], array $headers = [], int $times = 1): void
     {
         $this->failures[] = compact('pattern', 'status', 'body', 'headers', 'times');
+    }
+
+    /**
+     * Creates an issue (or pull request) in a repository.
+     *
+     * @return int the issue number
+     */
+    public function addIssue(string $repo, array $assignees = []): int
+    {
+        $number = count($this->issues[$repo] ?? []) + 1;
+        $this->issues[$repo][$number] = ['number' => $number, 'assignees' => $assignees];
+
+        return $number;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function issueAssignees(string $repo, int $number): array
+    {
+        return $this->issues[$repo][$number]['assignees'];
     }
 
     public function user(string $login): ?array
@@ -279,6 +313,11 @@ class FakeGitHub
             (bool) preg_match("#^PUT /orgs/{$org}/teams/([^/]+)/repos/{$org}/([^/]+)$#", $route, $m) => $this->grantRepo($m[1], $m[2], $data),
             (bool) preg_match("#^DELETE /orgs/{$org}/teams/([^/]+)/repos/{$org}/([^/]+)$#", $route, $m) => $this->revokeRepo($m[1], $m[2]),
             (bool) preg_match("#^(GET|PUT|DELETE) /orgs/{$org}/teams/([^/]+)/memberships/([^/]+)$#", $route, $m) => $this->teamMembership($m[1], $m[2], $m[3]),
+            (bool) preg_match("#^GET /orgs/{$org}/teams/([^/]+)/members$#", $route, $m) => $this->teamMembers($m[1]),
+
+            // Issues
+            (bool) preg_match("#^GET /repos/{$org}/([^/]+)/issues$#", $route, $m) => $this->listIssues($m[1]),
+            (bool) preg_match("#^POST /repos/{$org}/([^/]+)/issues/(\d+)/assignees$#", $route, $m) => $this->addAssignees($m[1], (int) $m[2], $data['assignees'] ?? []),
 
             // Repositories
             (bool) preg_match("#^GET /repos/{$org}/([^/]+)$#", $route, $m) => isset($this->repos[$m[1]])
@@ -486,7 +525,65 @@ class FakeGitHub
 
         unset($this->teams[$slug]['repos'][$repo]);
 
+        $lostAccess = [];
+
+        foreach (array_keys(array_filter($this->teams[$slug]['members'], fn ($state) => $state === 'active')) as $userId) {
+            $login = $this->userById($userId)['login'];
+
+            if (! $this->canAccess($login, $repo)) {
+                $lostAccess[] = $login;
+            }
+        }
+
+        if ($this->unassignDelay > 0) {
+            $this->pendingUnassignments[] = ['repo' => $repo, 'logins' => $lostAccess, 'countdown' => $this->unassignDelay];
+        } else {
+            $this->unassign($repo, $lostAccess);
+        }
+
         return Http::response(null, 204);
+    }
+
+    private function teamMembers(string $slug)
+    {
+        if (! isset($this->teams[$slug])) {
+            return Http::response(['message' => 'Not Found'], 404);
+        }
+
+        $members = [];
+
+        foreach ($this->teams[$slug]['members'] as $userId => $state) {
+            if ($state === 'active') {
+                $user = $this->userById($userId);
+                $members[] = ['id' => $user['id'], 'login' => $user['login']];
+            }
+        }
+
+        return Http::response($members);
+    }
+
+    /**
+     * Org owners, and active members of a team with access to the repository.
+     */
+    private function canAccess(string $login, string $repo): bool
+    {
+        $user = $this->user($login);
+
+        if (! $user) {
+            return false;
+        }
+
+        if (($this->orgMembers[$user['id']]['role'] ?? null) === 'admin') {
+            return true;
+        }
+
+        foreach ($this->teams as $team) {
+            if (($team['members'][$user['id']] ?? null) === 'active' && isset($team['repos'][$repo])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -557,6 +654,55 @@ class FakeGitHub
         unset($this->{$collection}[$key]);
 
         return Http::response(null, 204);
+    }
+
+    /*
+     * Issues
+     */
+
+    private function listIssues(string $repo)
+    {
+        if (! isset($this->repos[$repo])) {
+            return Http::response(['message' => 'Not Found'], 404);
+        }
+
+        foreach ($this->pendingUnassignments as $i => &$pending) {
+            if ($pending['repo'] === $repo && $pending['countdown']-- <= 0) {
+                $this->unassign($repo, $pending['logins']);
+                unset($this->pendingUnassignments[$i]);
+            }
+        }
+        unset($pending);
+
+        return Http::response(array_values(array_map(fn ($issue) => [
+            'number' => $issue['number'],
+            'assignees' => array_map(fn ($login) => ['login' => $login], $issue['assignees']),
+        ], $this->issues[$repo] ?? [])));
+    }
+
+    /**
+     * Like GitHub: adds to the assignees, and silently skips people who can't be assigned.
+     */
+    private function addAssignees(string $repo, int $number, array $logins)
+    {
+        if (! isset($this->issues[$repo][$number])) {
+            return Http::response(['message' => 'Not Found'], 404);
+        }
+
+        foreach ($logins as $login) {
+            if ($this->canAccess($login, $repo) && ! in_array($login, $this->issues[$repo][$number]['assignees'], true)) {
+                $this->issues[$repo][$number]['assignees'][] = $login;
+            }
+        }
+
+        return Http::response($this->issues[$repo][$number], 201);
+    }
+
+    private function unassign(string $repo, array $logins): void
+    {
+        foreach ($this->issues[$repo] ?? [] as $number => $issue) {
+            $this->issues[$repo][$number]['assignees'] = array_values(array_diff($issue['assignees'], $logins));
+        }
     }
 
     /*

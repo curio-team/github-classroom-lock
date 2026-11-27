@@ -22,8 +22,9 @@ On the exam page, the examinator goes through five steps:
    on the list can join, so a forwarded link is useless to others. The page shows who is in and who isn't yet.
 4. **Tijdens het examen:** unlock all groups when the exam starts. Lock a group, or all groups, at the end of the
    day, and unlock at the start of the next.
-   Locking removes the team's access to its repository and Project. Students stay in their team, so assigned
-   issues and history are kept.
+   Locking removes the team's access to its repository and Project. Students stay in their team. GitHub does take
+   them off the repository's issues and pull requests when they lose access, so the app stores who was assigned to
+   what before locking and assigns them again after unlocking (see [Issue assignments and locking](#issue-assignments-and-locking)).
 5. **Afsluiten:** after the exam, students are removed from their teams and from `curio-summatief`, and the
    repositories are archived (read-only). You see exactly what will happen and confirm by typing the exam name.
    Organization owners are never removed. **Backup maken** puts a full `git clone` of every repository (all files,
@@ -49,6 +50,23 @@ name that doesn't exist yet creates that group.
   organization. Students who were already members before the exam, organization owners, and students who are in
   another exam that is still running stay in the organization.
 * A group that ends up empty is removed, unless it already exists on GitHub.
+
+### Issue assignments and locking
+
+When the team loses access to its repository, GitHub unassigns its students from the repository's issues and pull
+requests. (Draft issues in the Project keep their assignees: they don't belong to the repository.) So:
+
+* **Locking** first stores which student was assigned to which issue or pull request (open and closed), then removes
+  the access. A locked group shows how many assignments were stored. If storing fails, the group is still locked
+  (closing the exam matters more) and the group shows a warning; those assignments then have to be set again by hand.
+* **Unlocking** gives the access back and then assigns the students again. Students who left the group in the meantime
+  are skipped, as are issues that no longer exist. Nobody is taken off an issue. GitHub unassigns in the background
+  and silently ignores assignees it can't add, so a minute later the app checks again, and once more if needed. Until
+  then the group shows *Toewijzingen van issues terugzetten…*. If it still fails, the group shows a warning and the
+  next unlock tries again.
+
+Each restored assignment gets the student a GitHub notification ("assigned you"), and the issue's timeline shows the
+unassignment and reassignment by the app.
 
 ### Projects and locking
 
@@ -92,10 +110,16 @@ One GitHub App does both jobs: it makes all changes in the organization, and it 
    | --- | --- | --- | --- |
    | Repository | Administration | Read & write | Creating, locking, archiving and deleting repositories |
    | Repository | Contents | Read & write | Creating repositories from a template, cloning them for backups |
+   | Repository | Issues | Read & write | Storing and restoring issue assignments when locking and unlocking |
+   | Repository | Pull requests | Read & write | Storing and restoring pull request assignments when locking and unlocking |
    | Repository | Metadata | Read | (required) |
    | Organization | Members | Read & write | Teams (creating and deleting), invitations, memberships |
    | Organization | Administration | Read & write | Base permission, organization-wide Projects switch |
    | Organization | Projects | Read & write | Creating, linking, locking and deleting Projects |
+
+   Already have the app? Add **Issues** and **Pull requests** (Read & write), then accept the new permissions under
+   **curio-summatief → Settings → GitHub Apps → Configure**. Until then, locking still works but shows a warning that
+   the assignments couldn't be stored.
 
 4. Create the app, then on its settings page:
    * Note the **App ID** and **Client ID**
