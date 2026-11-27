@@ -11,7 +11,7 @@
 
     @if ($result->state === 'joined' && $group?->isLocked())
         <div class="rounded-lg bg-warning px-5 py-3 font-medium text-ink">
-            🔒 Je groep is op dit moment vergrendeld. Je kunt weer bij je repository en Project zodra de examinator het examen ontgrendelt.
+            🔒 Je groep is op dit moment vergrendeld. Je kunt bij je repository en Project zodra de examinator je groep ontgrendelt.
         </div>
     @endif
 

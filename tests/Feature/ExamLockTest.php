@@ -4,8 +4,11 @@ namespace Tests\Feature;
 
 use App\Jobs\ProvisionCohort;
 use App\Livewire\ExamPage;
+use App\Models\Group;
 use App\Models\Student;
+use App\Services\Exam\ExamLock;
 use App\Services\Join\JoinService;
+use App\Services\Roster\RosterEditor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\Support\FakeGitHub;
@@ -24,9 +27,13 @@ class ExamLockTest extends TestCase
         $this->github = $this->fakeGitHub();
     }
 
+    /**
+     * An exam on its first day: provisioned, everyone joined, groups opened.
+     */
     private function examWithJoinedStudents()
     {
         $exam = $this->provisionedCohort($this->github, ['alice' => 'Groep 1', 'bob' => 'Groep 2']);
+        $this->app->make(ExamLock::class)->setCohortLocked($exam, false);
 
         foreach (['alice', 'bob'] as $login) {
             $this->app->make(JoinService::class)->process(Student::where('github_login', $login)->first(), 'user-token-' . $login, $this->github->user($login));
@@ -37,9 +44,62 @@ class ExamLockTest extends TestCase
 
     private function projectRole(string $groupName): ?string
     {
-        $group = \App\Models\Group::where('name', $groupName)->first();
+        $group = Group::where('name', $groupName)->first();
 
         return $this->github->projects[$group->project_node_id]['collaborators'][$group->team_node_id] ?? null;
+    }
+
+    public function test_groups_are_prepared_locked_and_opened_on_the_day_of_the_exam(): void
+    {
+        $exam = $this->provisionedCohort($this->github, ['alice' => 'Groep 1', 'bob' => 'Groep 2']);
+
+        // Prepared weeks before: everything exists, but no team has access yet.
+        $this->assertSame(2, $exam->groups()->whereNotNull('locked_at')->count());
+
+        foreach (['Groep 1', 'Groep 2'] as $name) {
+            $slug = Group::where('name', $name)->first()->githubName();
+            $this->assertNull($this->github->teamRepoPermission($slug, $slug));
+            $this->assertSame('NONE', $this->projectRole($name));
+        }
+
+        // Students can already join; they land in their (still closed) team.
+        $this->app->make(JoinService::class)->process(Student::where('github_login', 'alice')->first(), 'user-token-alice', $this->github->user('alice'));
+        $this->assertSame('active', $this->github->teamMembershipState('sd1a-2026-groep-1', 'alice'));
+        $this->assertNull($this->github->teamRepoPermission('sd1a-2026-groep-1', 'sd1a-2026-groep-1'));
+
+        // On the day of the exam.
+        Livewire::actingAs($this->teacher())
+            ->test(ExamPage::class, ['cohort' => $exam, 'step' => 'exam'])
+            ->assertSee('🔒 Vergrendeld')
+            ->call('unlockAll')
+            ->assertSee('🔓 Open');
+
+        foreach (['Groep 1', 'Groep 2'] as $name) {
+            $slug = Group::where('name', $name)->first()->githubName();
+            $this->assertSame('push', $this->github->teamRepoPermission($slug, $slug));
+            $this->assertSame('WRITER', $this->projectRole($name));
+        }
+    }
+
+    public function test_a_group_added_while_the_exam_is_open_starts_open(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $this->github->addUser('carol');
+
+        $this->app->make(RosterEditor::class)->add($exam, 'carol', 'Groep 3');
+
+        $this->assertFalse(Group::where('name', 'Groep 3')->sole()->isLocked());
+    }
+
+    public function test_a_group_added_while_the_exam_is_locked_starts_locked(): void
+    {
+        $exam = $this->examWithJoinedStudents();
+        $this->app->make(ExamLock::class)->setCohortLocked($exam, true);
+        $this->github->addUser('carol');
+
+        $this->app->make(RosterEditor::class)->add($exam, 'carol', 'Groep 3');
+
+        $this->assertTrue(Group::where('name', 'Groep 3')->sole()->isLocked());
     }
 
     public function test_locking_a_group_revokes_its_access_but_keeps_the_members(): void

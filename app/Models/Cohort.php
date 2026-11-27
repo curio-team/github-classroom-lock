@@ -85,6 +85,17 @@ class Cohort extends Model
         return $this->hasMany(Student::class)->orderBy('github_login');
     }
 
+    /**
+     * Whether a group added now starts locked. Groups are prepared well before
+     * the exam and only opened on the day itself, so they start locked, unless
+     * the exam is already open (some group is unlocked): a group added then,
+     * e.g. by moving a student, follows the others.
+     */
+    public function newGroupsStartLocked(): bool
+    {
+        return ! $this->groups()->whereNull('archived_at')->whereNull('locked_at')->exists();
+    }
+
     public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);

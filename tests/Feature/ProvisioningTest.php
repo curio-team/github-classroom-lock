@@ -6,6 +6,7 @@ use App\Enums\GroupStatus;
 use App\GitHub\RateLimitedException;
 use App\Jobs\ProvisionCohort;
 use App\Models\AuditLog;
+use App\Services\Exam\ExamLock;
 use App\Services\Provisioning\GroupProvisioner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -36,17 +37,22 @@ class ProvisioningTest extends TestCase
             $this->assertSame($group->team_id, $team['id']);
             $this->assertSame('closed', $team['privacy']);
 
-            // Private repository, accessible only to this team
+            // Private repository; no team has access while the group is locked
             $repo = $github->repos[$name];
             $this->assertTrue($repo['private']);
-            $this->assertSame(['push'], array_values(array_filter(array_map(fn ($t) => $t['repos'][$name] ?? null, $github->teams))));
+            $this->assertSame([], array_values(array_filter(array_map(fn ($t) => $t['repos'][$name] ?? null, $github->teams))));
 
-            // Project linked to the repository and the team, team has write access
+            // Project linked to the repository and the team, team has no access yet
             $project = $github->projects[$group->project_node_id];
             $this->assertSame($name, $project['title']);
             $this->assertSame([$repo['node_id']], $project['repositories']);
             $this->assertSame([$team['node_id']], $project['teams']);
-            $this->assertSame([$team['node_id'] => 'WRITER'], $project['collaborators']);
+            $this->assertSame([$team['node_id'] => 'NONE'], $project['collaborators']);
+
+            // Unlocked: only this team gets access
+            $this->app->make(ExamLock::class)->setLocked($group, false);
+            $this->assertSame(['push'], array_values(array_filter(array_map(fn ($t) => $t['repos'][$name] ?? null, $github->teams))));
+            $this->assertSame([$team['node_id'] => 'WRITER'], $github->projects[$group->project_node_id]['collaborators']);
 
             $this->assertSame(GroupStatus::Provisioned, $group->status);
             $this->assertCount(6, $group->completed_steps);

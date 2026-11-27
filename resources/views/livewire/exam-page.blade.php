@@ -230,6 +230,8 @@ hubot,Groep 2</pre>
             <p class="text-sm text-muted">
                 Elke groep krijgt een eigen team, een private repository en een Project, die alleen de groep zelf kan zien.
                 Je kunt dit veilig opnieuw doen: wat al bestaat wordt hergebruikt.
+                Groepen staan vergrendeld tot je ze ontgrendelt bij stap 4, dus je kunt alles ruim van tevoren klaarzetten en studenten al laten inloggen.
+                Komt er een groep bij terwijl het examen open is, dan staat die meteen open.
             </p>
 
             <div class="overflow-x-auto">
@@ -453,8 +455,8 @@ hubot,Groep 2</pre>
                 <div>
                     <x-headings.section>Tijdens het examen</x-headings.section>
                     <p class="text-sm text-muted">
-                        Vergrendel aan het eind van de dag, ontgrendel bij de start. Een vergrendelde groep kan niet bij zijn repository en Project;
-                        de studenten blijven wel in hun team, zodat toegewezen taken behouden blijven.
+                        Groepen staan vergrendeld tot je ze hier ontgrendelt. Ontgrendel bij de start van het examen, vergrendel aan het eind van de dag.
+                        Een vergrendelde groep kan niet bij zijn repository en Project; de studenten blijven wel in hun team, zodat toegewezen taken behouden blijven.
                     </p>
                 </div>
                 @if ($activeGroupCount > 0 && ! $cohort->offboarding_started_at)

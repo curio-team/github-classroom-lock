@@ -71,6 +71,17 @@ class Group extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        // Provisioning creates the group on GitHub in this state, so a
+        // locked group never gives its team access until it is unlocked.
+        static::creating(function (Group $group) {
+            if ($group->locked_at === null && $group->cohort->newGroupsStartLocked()) {
+                $group->locked_at = now();
+            }
+        });
+    }
+
     public function cohort(): BelongsTo
     {
         return $this->belongsTo(Cohort::class);

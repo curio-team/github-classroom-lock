@@ -14,9 +14,14 @@ On the exam page, the examinator goes through five steps:
    [Changing groups during the exam](#changing-groups-during-the-exam).
 2. **Klaarzetten:** one click creates the team, private repository (optionally from a template) and Project
    (optionally copied from a template) for each group. Running it again is safe: what already exists is reused.
+   Groups start **locked**: their team has no access to the repository and Project until you unlock it in step 4. So
+   you can prepare everything and let students join weeks in advance, and open it all on the day of the exam. A group
+   added while the exam is open (at least one group unlocked) starts open, so moving a student mid-exam doesn't lock
+   them out.
 3. **Uitnodigen:** share the invite link. Students sign in with GitHub and land in their own group. Only students
    on the list can join, so a forwarded link is useless to others. The page shows who is in and who isn't yet.
-4. **Tijdens het examen:** lock a group, or all groups, at the end of the day, and unlock at the start of the next.
+4. **Tijdens het examen:** unlock all groups when the exam starts. Lock a group, or all groups, at the end of the
+   day, and unlock at the start of the next.
    Locking removes the team's access to its repository and Project. Students stay in their team, so assigned
    issues and history are kept.
 5. **Afsluiten:** after the exam, students are removed from their teams and from `curio-summatief`, and the
