@@ -48,7 +48,10 @@ class CleanupTest extends TestCase
         $this->assertSame([], $this->github->log);
         $this->assertCount(2, $plan['groups']);
         $this->assertSame(['delete_project', 'delete_repository', 'delete_team'], array_column($plan['groups'][0]['actions'], 'type'));
-        $this->assertSame([], $plan['warnings']);
+        $this->assertSame(['Er is nog geen backup van de repositories gemaakt (zie hierboven).'], $plan['warnings']);
+
+        $withoutRepositories = $this->app->make(GitHubCleanup::class)->plan($cohort, ['delete_repositories' => false]);
+        $this->assertSame([], $withoutRepositories['warnings']);
     }
 
     public function test_cleanup_deletes_projects_repositories_and_teams(): void

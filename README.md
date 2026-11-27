@@ -20,7 +20,9 @@ On the exam page, the examinator goes through five steps:
    issues and history are kept.
 5. **Afsluiten:** after the exam, students are removed from their teams and from `curio-summatief`, and the
    repositories are archived (read-only). You see exactly what will happen and confirm by typing the exam name.
-   Organization owners are never removed. Once everything is graded, **Opruimen na het beoordelen** permanently
+   Organization owners are never removed. **Backup maken** puts a full `git clone` of every repository (all files,
+   commits and branches) and an overview of the groups and students into one zip to download. Issues, pull requests
+   and Projects aren't included. Once everything is graded, **Opruimen na het beoordelen** permanently
    deletes the exam's Projects, repositories and teams from GitHub, with the same preview and confirmation.
    Organization owners can restore a deleted repository for 90 days (**Settings → Deleted repositories**).
 
@@ -39,7 +41,8 @@ in step 4. Note that this switch affects every exam running at the same time.
 2. Copy `.env.example` to `.env`, fill it in (see [GitHub App](#github-app)), and run `php artisan key:generate`
 3. `php artisan migrate`
 4. `npm run build` (or `npm run dev`), then `php artisan serve`
-5. Run `php artisan queue:work`: preparing groups, locking and closing an exam run as queued jobs
+5. Run `php artisan queue:work`: preparing groups, locking, closing an exam and making backups run as queued jobs.
+   Backups need `git` on the server and PHP's `zip` extension, and are stored in `storage/app/backups`.
 6. Check the setup with `php artisan github:check`. It only reads, so it's safe against production.
 
 Examinators sign in with the SD client (login.curio.codes). Students sign in with GitHub.
@@ -66,7 +69,7 @@ One GitHub App does both jobs: it makes all changes in the organization, and it 
    | Type | Permission | Access | Used for |
    | --- | --- | --- | --- |
    | Repository | Administration | Read & write | Creating, locking, archiving and deleting repositories |
-   | Repository | Contents | Read & write | Creating repositories from a template |
+   | Repository | Contents | Read & write | Creating repositories from a template, cloning them for backups |
    | Repository | Metadata | Read | (required) |
    | Organization | Members | Read & write | Teams (creating and deleting), invitations, memberships |
    | Organization | Administration | Read & write | Base permission, organization-wide Projects switch |

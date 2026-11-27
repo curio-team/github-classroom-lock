@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\GroupStatus;
 use App\Enums\StudentStatus;
 use App\GitHub\GitHubException;
+use App\Jobs\BackupCohort;
 use App\Jobs\CleanUpCohort;
 use App\Jobs\OffboardCohort;
 use App\Jobs\ProvisionCohort;
@@ -345,7 +346,39 @@ class ExamPage extends Component
     }
 
     /*
-     * 5b. Clean up GitHub after grading
+     * 5b. Backup of all repositories
+     */
+
+    public function createBackup(): void
+    {
+        if ($this->cohort->backup_status === 'pending') {
+            return;
+        }
+
+        if (! $this->cohort->groups()->get()->contains->hasRepositoryOnGitHub()) {
+            $this->notify('error', 'Er staan geen repositories van dit examen op GitHub.');
+
+            return;
+        }
+
+        $this->cohort->forceFill(['backup_status' => 'pending', 'backup_error' => null])->save();
+
+        Audit::record('backup.requested', $this->cohort);
+
+        try {
+            BackupCohort::dispatch($this->cohort);
+        } catch (Throwable $e) {
+            // Only reached with a synchronous queue; the job has recorded the failure.
+            report($e);
+
+            return;
+        }
+
+        $this->notify('success', 'De backup wordt gemaakt. Zodra hij klaar is verschijnt hier een downloadknop.');
+    }
+
+    /*
+     * 5c. Clean up GitHub after grading
      */
 
     public function previewCleanup(): void
@@ -444,7 +477,8 @@ class ExamPage extends Component
             'remainingOnGitHub' => GitHubCleanup::remaining($groups),
             'isBusy' => $groups->contains(fn (Group $group) => $group->status === GroupStatus::Provisioning || $group->lock_pending)
                 || ($this->cohort->offboarding_started_at !== null && $this->cohort->offboarded_at === null)
-                || $this->cohort->cleanup_pending,
+                || $this->cohort->cleanup_pending
+                || $this->cohort->backup_status === 'pending',
         ]);
     }
 }

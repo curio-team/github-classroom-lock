@@ -557,6 +557,39 @@ hubot,Groep 2</pre>
         @endif
 
         <x-content.section>
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                <x-headings.section>Backup van alle repositories</x-headings.section>
+                @if ($remainingOnGitHub['repositories'] > 0 && $cohort->backup_status !== 'pending')
+                    <x-buttons.secondary wire:click="createBackup" wire:loading.attr="aria-disabled">
+                        {{ $cohort->backupFile() ? 'Nieuwe backup maken' : 'Backup maken' }}
+                    </x-buttons.secondary>
+                @endif
+            </div>
+            <p class="text-sm text-muted">
+                Eén zip-bestand met een volledige kopie (alle bestanden, commits en branches) van elke repository, en een overzicht van de groepen en hun studenten.
+                Issues, pull requests en Projects zitten er niet in.
+            </p>
+
+            @if ($cohort->backup_status === 'pending')
+                <div class="alert alert-warning">De backup wordt gemaakt. Dit kan enkele minuten duren; deze pagina wordt vanzelf bijgewerkt.</div>
+            @elseif ($cohort->backup_status === 'failed')
+                <div class="alert alert-danger break-all"><strong>Backup mislukt:</strong> {{ $cohort->backup_error }}</div>
+            @endif
+
+            @if ($cohort->backupFile() && $cohort->backup_status !== 'pending')
+                <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <x-buttons.primary href="{{ route('exams.backup', $cohort) }}">Backup downloaden</x-buttons.primary>
+                    <span class="text-sm text-muted">
+                        {{ number_format($cohort->backup_size / 1048576, 1, ',', '.') }} MB, gemaakt op {{ $cohort->backup_created_at->format('d-m-Y H:i') }}
+                    </span>
+                </div>
+                @if ($cohort->backup_status === 'ready' && $cohort->backup_error)
+                    <div class="alert alert-warning text-sm break-all">{{ $cohort->backup_error }}</div>
+                @endif
+            @endif
+        </x-content.section>
+
+        <x-content.section>
             <x-headings.section>Opruimen na het beoordelen</x-headings.section>
             <p>
                 Is alles beoordeeld? Verwijder dan de Projects, repositories en teams van dit examen definitief van GitHub.

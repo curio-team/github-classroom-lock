@@ -66,6 +66,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/exams/{cohort}', \App\Livewire\ExamPage::class)
                 ->name('exams.show');
 
+            Route::get('/exams/{cohort}/backup', [\App\Http\Controllers\BackupController::class, 'download'])
+                ->name('exams.backup');
+
             Route::get('/audit-log', \App\Livewire\AuditLogPage::class)
                 ->name('audit-log');
         });

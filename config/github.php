@@ -17,6 +17,9 @@ return [
 
     'api_version' => env('GITHUB_API_VERSION', '2022-11-28'),
 
+    // Where repositories are cloned from for backups: {git_url}/{org}/{repository}.git
+    'git_url' => env('GITHUB_GIT_URL', 'https://github.com'),
+
     /*
     |--------------------------------------------------------------------------
     | Organization (server) credentials

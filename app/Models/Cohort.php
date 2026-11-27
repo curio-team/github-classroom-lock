@@ -24,6 +24,11 @@ use Illuminate\Support\Str;
  * @property ?Carbon $offboarding_started_at
  * @property ?Carbon $offboarded_at
  * @property bool $cleanup_pending
+ * @property ?string $backup_status
+ * @property ?string $backup_path
+ * @property ?int $backup_size
+ * @property ?Carbon $backup_created_at
+ * @property ?string $backup_error
  */
 class Cohort extends Model
 {
@@ -51,7 +56,23 @@ class Cohort extends Model
             'offboarded_at' => 'datetime',
             'template_project_number' => 'integer',
             'cleanup_pending' => 'boolean',
+            'backup_size' => 'integer',
+            'backup_created_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Absolute path of the latest backup zip, or null when there is none.
+     */
+    public function backupFile(): ?string
+    {
+        if (! $this->backup_path) {
+            return null;
+        }
+
+        $path = storage_path('app/' . $this->backup_path);
+
+        return is_file($path) ? $path : null;
     }
 
     public function groups(): HasMany

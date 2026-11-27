@@ -90,6 +90,12 @@ class GitHubCleanup
             }
         }
 
+        $deletesRepositories = collect($groups)->contains(fn ($entry) => in_array('delete_repository', array_column($entry['actions'], 'type'), true));
+
+        if ($deletesRepositories && $cohort->backupFile() === null) {
+            array_unshift($warnings, 'Er is nog geen backup van de repositories gemaakt (zie hierboven).');
+        }
+
         return ['groups' => $groups, 'warnings' => $warnings, 'options' => $options];
     }
 
