@@ -9,6 +9,7 @@ use App\GitHub\RateLimitedException;
 use App\Models\Group;
 use App\Models\Student;
 use App\Services\Audit;
+use App\Services\GitHubMembership;
 use App\Services\GitHubUsers;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Sleep;
@@ -33,6 +34,7 @@ class JoinService
     public function __construct(
         private readonly GitHub $github,
         private readonly GitHubUsers $users,
+        private readonly GitHubMembership $membership,
     ) {
     }
 
@@ -317,15 +319,8 @@ class JoinService
             return;
         }
 
-        if ($previous->team_slug && $previous->id !== $current->id) {
-            $this->github->org()->delete(sprintf(
-                '/orgs/%s/teams/%s/memberships/%s',
-                rawurlencode($student->cohort->organization),
-                rawurlencode($previous->team_slug),
-                rawurlencode($student->github_login),
-            ), allow: [404]);
-
-            Audit::record('team.member_removed', $student, ['team' => $previous->team_slug, 'reason' => 'moved']);
+        if ($previous->hasTeamOnGitHub() && $previous->id !== $current->id) {
+            $this->membership->removeFromTeam($student, $previous, 'moved');
         }
 
         $student->previous_group_id = null;

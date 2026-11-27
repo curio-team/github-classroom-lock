@@ -18,6 +18,9 @@ use App\Services\Join\JoinService;
 use App\Services\Offboarding\GitHubCleanup;
 use App\Services\Offboarding\Offboarder;
 use App\Services\OrganizationChecks;
+use App\Services\Roster\RosterChange;
+use App\Services\Roster\RosterEditor;
+use App\Services\Roster\RosterException;
 use App\Services\Roster\RosterImporter;
 use App\Services\Roster\RosterPreview;
 use Illuminate\Support\Carbon;
@@ -56,6 +59,11 @@ class ExamPage extends Component
 
     #[Locked]
     public ?string $previewKey = null;
+
+    // Students (one at a time)
+    public string $newStudentLogin = '';
+
+    public string $newStudentGroup = '';
 
     // Invite link
     public string $inviteExpiresAt = '';
@@ -159,6 +167,51 @@ class ExamPage extends Component
     {
         RosterPreview::forget($this->previewKey);
         $this->reset('previewKey');
+    }
+
+    public function addStudent(RosterEditor $editor): void
+    {
+        $this->validate([
+            'newStudentLogin' => ['required', 'string', 'max:100'],
+            'newStudentGroup' => ['required', 'string', 'max:100'],
+        ], [
+            'newStudentLogin.required' => 'Vul een GitHub-gebruikersnaam in.',
+            'newStudentGroup.required' => 'Kies een groep, of typ de naam van een nieuwe groep.',
+        ]);
+
+        try {
+            $change = $editor->add($this->cohort, $this->newStudentLogin, $this->newStudentGroup);
+        } catch (RosterException $e) {
+            $this->addError('newStudentLogin', $e->getMessage());
+
+            return;
+        }
+
+        // Keep the group: often several students are added to the same one.
+        $this->reset('newStudentLogin');
+        $this->notifyChange($change);
+    }
+
+    public function moveStudent(int $studentId, string $groupName, RosterEditor $editor): void
+    {
+        $student = $this->cohort->students()->findOrFail($studentId);
+
+        try {
+            $this->notifyChange($editor->move($student, $groupName));
+        } catch (RosterException $e) {
+            $this->notify('error', $e->getMessage());
+        }
+    }
+
+    public function removeStudent(int $studentId, RosterEditor $editor): void
+    {
+        $student = $this->cohort->students()->findOrFail($studentId);
+
+        try {
+            $this->notifyChange($editor->remove($student));
+        } catch (RosterException $e) {
+            $this->notify('error', $e->getMessage());
+        }
     }
 
     /*
@@ -419,6 +472,11 @@ class ExamPage extends Component
     private function notify(string $type, string $message): void
     {
         $this->dispatch('notify', type: $type, message: $message);
+    }
+
+    private function notifyChange(RosterChange $change): void
+    {
+        $this->notify($change->complete ? 'success' : 'warning', $change->message);
     }
 
     public function render(OrganizationChecks $checks, Offboarder $offboarder, GitHubCleanup $cleanup, ExamLock $lock)

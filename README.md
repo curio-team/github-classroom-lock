@@ -10,7 +10,8 @@ On the exam page, the examinator goes through five steps:
 
 1. **Studenten:** upload the students taking the exam, with their exam group. This is a CSV with `github_username`
    and `group`; an Excel export works too. Unknown usernames, duplicates and empty groups are reported before
-   anything is saved. A corrected list can simply be uploaded again.
+   anything is saved. A corrected list can simply be uploaded again. Small changes don't need a new list; see
+   [Changing groups during the exam](#changing-groups-during-the-exam).
 2. **Klaarzetten:** one click creates the team, private repository (optionally from a template) and Project
    (optionally copied from a template) for each group. Running it again is safe: what already exists is reused.
 3. **Uitnodigen:** share the invite link. Students sign in with GitHub and land in their own group. Only students
@@ -27,6 +28,22 @@ On the exam page, the examinator goes through five steps:
    Organization owners can restore a deleted repository for 90 days (**Settings → Deleted repositories**).
 
 Every change on GitHub is recorded in the **Auditlog**.
+
+### Changing groups during the exam
+
+Students can be added, moved and removed one at a time, in step 1 (**Eén student toevoegen**, and **Wijzigen** next
+to each student) and in step 3 (**Student toevoegen** under the list, and **Wijzigen** in each row). Typing a group
+name that doesn't exist yet creates that group.
+
+* **A student can't sign in to their GitHub account:** add the account they can use to the same group, then remove the
+  old one. The new account joins with the existing invite link.
+* **Moving** a student who has already joined updates the teams on GitHub right away. If the new group isn't on GitHub
+  yet, prepare it in step 2 (**Klaarzetten**); the student is moved to its team as soon as it's ready, and keeps
+  working in the old group until then.
+* **Removing** a student takes them out of their team and withdraws their invitation or membership of the
+  organization. Students who were already members before the exam, organization owners, and students who are in
+  another exam that is still running stay in the organization.
+* A group that ends up empty is removed, unless it already exists on GitHub.
 
 ### Projects and locking
 
@@ -101,7 +118,8 @@ group's repository. The exam page warns you if it isn't. Staff are owners, so th
 
 * GitHub allows 500 invitations per 24 hours, and an unaccepted invitation expires after 7 days. A student whose
   invitation expired can simply open the link again.
-* A student removed from the list keeps their GitHub access. Close the exam (step 5) for them first if needed.
+* A student left out of an uploaded list keeps their GitHub access. Use **Wijzigen → Verwijderen** instead to also
+  revoke it.
 * If GitHub won't let the app accept the invitation automatically, the student gets a button to accept it on
   github.com (one extra click).
 * Using a classic `GITHUB_TOKEN` instead of the App? Deleting repositories also needs its `delete_repo` scope.

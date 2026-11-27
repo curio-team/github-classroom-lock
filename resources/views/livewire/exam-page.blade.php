@@ -53,6 +53,12 @@
         </div>
     @endif
 
+    <datalist id="group-names">
+        @foreach ($groups->whereNull('archived_at') as $group)
+            <option value="{{ $group->name }}"></option>
+        @endforeach
+    </datalist>
+
     {{-- 1. Students --}}
     @if ($step === 'students')
         <x-content.section>
@@ -157,6 +163,17 @@ hubot,Groep 2</pre>
             </x-content.section>
         @endif
 
+        @if (! $preview && ! $cohort->offboarding_started_at)
+            <x-content.section>
+                <x-headings.section>Eén student toevoegen</x-headings.section>
+                <p class="text-sm text-muted">
+                    Zonder een nieuwe lijst te uploaden, bijvoorbeeld als een student met een ander GitHub-account meedoet.
+                    Typ een nieuwe groepsnaam om een groep aan te maken.
+                </p>
+                @include('livewire.partials.add-student', ['context' => 'students'])
+            </x-content.section>
+        @endif
+
         @if ($groups->isNotEmpty() && ! $preview)
             <x-content.section>
                 <div class="flex justify-between items-center">
@@ -165,12 +182,26 @@ hubot,Groep 2</pre>
                 </div>
                 <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                     @foreach ($groups as $group)
-                        <div class="rounded-lg border border-ink/10 bg-surface-subtle p-3">
+                        <div wire:key="roster-group-{{ $group->id }}" class="rounded-lg border border-ink/10 bg-surface-subtle p-3 flex flex-col gap-1">
                             <strong>{{ $group->name }}</strong>
-                            <div class="text-muted">{{ $group->students->pluck('github_login')->implode(', ') ?: 'geen studenten' }}</div>
+                            @forelse ($group->students as $student)
+                                <div wire:key="roster-student-{{ $student->id }}" class="flex justify-between items-start gap-2">
+                                    <span class="pt-0.5 break-all">{{ $student->github_login }}</span>
+                                    @unless ($cohort->offboarding_started_at)
+                                        @include('livewire.partials.student-actions', ['student' => $student])
+                                    @endunless
+                                </div>
+                            @empty
+                                <div class="text-muted">geen studenten</div>
+                            @endforelse
                         </div>
                     @endforeach
                 </div>
+                @unless ($cohort->offboarding_started_at)
+                    <x-content.hint>
+                        Een student naar een andere groep verplaatsen of verwijderen gaat meteen, ook op GitHub als de student al is toegevoegd.
+                    </x-content.hint>
+                @endunless
             </x-content.section>
         @endif
     @endif
@@ -252,6 +283,8 @@ hubot,Groep 2</pre>
                                 <td class="text-right">
                                     @if (! $cohort->offboarding_started_at && $group->status === \App\Enums\GroupStatus::Failed)
                                         <x-buttons.secondary tight wire:click="provisionGroup({{ $group->id }})">Opnieuw proberen</x-buttons.secondary>
+                                    @elseif (! $cohort->offboarding_started_at && $group->status === \App\Enums\GroupStatus::Pending && $provisionedCount > 0)
+                                        <x-buttons.secondary tight wire:click="provisionGroup({{ $group->id }})">Klaarzetten</x-buttons.secondary>
                                     @endif
                                 </td>
                             </tr>
@@ -362,9 +395,14 @@ hubot,Groep 2</pre>
                                     @endif
                                 </td>
                                 <td class="text-right">
-                                    @if (in_array($student->status, [\App\Enums\StudentStatus::Failed, \App\Enums\StudentStatus::Invited, \App\Enums\StudentStatus::Imported]) && $student->last_attempt_at && ! $cohort->offboarding_started_at)
-                                        <x-buttons.secondary tight wire:click="retryStudent({{ $student->id }})" wire:loading.attr="aria-disabled">Opnieuw proberen</x-buttons.secondary>
-                                    @endif
+                                    @unless ($cohort->offboarding_started_at)
+                                        <div class="flex flex-col items-end gap-2">
+                                            @if (in_array($student->status, [\App\Enums\StudentStatus::Failed, \App\Enums\StudentStatus::Invited, \App\Enums\StudentStatus::Imported]) && $student->last_attempt_at)
+                                                <x-buttons.secondary tight wire:click="retryStudent({{ $student->id }})" wire:loading.attr="aria-disabled">Opnieuw proberen</x-buttons.secondary>
+                                            @endif
+                                            @include('livewire.partials.student-actions', ['student' => $student])
+                                        </div>
+                                    @endunless
                                 </td>
                             </tr>
                         @empty
@@ -373,6 +411,19 @@ hubot,Groep 2</pre>
                     </tbody>
                 </table>
             </div>
+            @unless ($cohort->offboarding_started_at)
+                <details @if ($errors->has('newStudentLogin') || $errors->has('newStudentGroup')) open @endif>
+                    <summary>Student toevoegen</summary>
+                    <div class="mt-2 flex flex-col gap-2">
+                        <p class="text-sm text-muted">
+                            Kan een student niet inloggen op het eigen GitHub-account? Voeg het account toe waarmee de student wel kan inloggen,
+                            en verwijder het oude account hierboven via <em>Wijzigen</em>. Typ een nieuwe groepsnaam om een groep aan te maken.
+                        </p>
+                        @include('livewire.partials.add-student', ['context' => 'invite'])
+                    </div>
+                </details>
+            @endunless
+
             <x-content.hint>
                 Nog niet ingelogd: de student heeft de link nog niet geopend. Uitgenodigd: de student moet de uitnodiging nog accepteren op
                 github.com/orgs/{{ $cohort->organization }}/invitation. Toegevoegd: de student zit in de eigen groep.

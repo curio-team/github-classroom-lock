@@ -11,6 +11,7 @@ use App\Models\Cohort;
 use App\Models\Group;
 use App\Models\Student;
 use App\Services\Audit;
+use App\Services\GitHubMembership;
 
 /**
  * End-of-course offboarding. plan() is a dry run that lists every change;
@@ -25,8 +26,10 @@ class Offboarder
         'archive_repositories' => true,
     ];
 
-    public function __construct(private readonly GitHub $github)
-    {
+    public function __construct(
+        private readonly GitHub $github,
+        private readonly GitHubMembership $membership,
+    ) {
     }
 
     public static function normalizeOptions(array $options): array
@@ -64,7 +67,7 @@ class Offboarder
             }
 
             if ($options['remove_org_membership']) {
-                $otherCohorts = $this->otherActiveCohorts($student);
+                $otherCohorts = $this->membership->otherActiveCohorts($student);
 
                 if ($otherCohorts) {
                     $warnings[] = "{$student->github_login} zit ook in " . implode(', ', $otherCohorts) . ' en blijft daarom lid van de organisatie.';
@@ -168,29 +171,10 @@ class Offboarder
 
     private function performStudentAction(Student $student, string $type): void
     {
-        $org = rawurlencode($student->cohort->organization);
-        $login = rawurlencode($student->github_login);
-
-        switch ($type) {
-            case 'remove_team':
-                $this->github->org()->delete("/orgs/{$org}/teams/" . rawurlencode($student->group->team_slug) . "/memberships/{$login}", allow: [404]);
-                Audit::record('team.member_removed', $student, ['team' => $student->group->team_slug, 'reason' => 'offboarding']);
-                break;
-
-            case 'remove_org':
-                // Safety net: never remove an organization owner (staff) that ended up on a roster.
-                $membership = $this->github->org()->get("/orgs/{$org}/memberships/{$login}", allow: [404]);
-
-                if ($membership->successful() && $membership->json('role') === 'admin') {
-                    Audit::record('org.member_kept', $student, ['reason' => 'organization owner']);
-                    break;
-                }
-
-                // Removes an active member, or cancels a pending invitation.
-                $this->github->org()->delete("/orgs/{$org}/memberships/{$login}", allow: [404]);
-                Audit::record('org.member_removed', $student);
-                break;
-        }
+        match ($type) {
+            'remove_team' => $this->membership->removeFromTeam($student, $student->group, 'offboarding'),
+            'remove_org' => $this->membership->removeFromOrganization($student),
+        };
     }
 
     private function archiveRepository(Group $group): void
@@ -206,25 +190,5 @@ class Offboarder
         $group->save();
 
         Audit::record('repository.archived', $group, ['repository' => $group->repository_name]);
-    }
-
-    /**
-     * Names of other, not yet offboarded cohorts in the same org that contain this student.
-     *
-     * @return array<int, string>
-     */
-    private function otherActiveCohorts(Student $student): array
-    {
-        return Student::query()
-            ->where('github_user_id', $student->github_user_id)
-            ->where('cohort_id', '!=', $student->cohort_id)
-            ->whereIn('status', [StudentStatus::Joined->value, StudentStatus::Invited->value, StudentStatus::Imported->value])
-            ->whereHas('cohort', fn ($query) => $query
-                ->where('organization', $student->cohort->organization)
-                ->whereNull('offboarding_started_at'))
-            ->with('cohort')
-            ->get()
-            ->pluck('cohort.name')
-            ->all();
     }
 }
