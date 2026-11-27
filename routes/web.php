@@ -68,9 +68,5 @@ Route::middleware(['auth'])->group(function () {
 
             Route::get('/audit-log', \App\Livewire\AuditLogPage::class)
                 ->name('audit-log');
-
-            // Old exam lock tool for teams created by GitHub Classroom.
-            Route::get('/dashboard', \App\Livewire\TeacherDashboardPage::class)
-                ->name('dashboard.teacher');
         });
 });

@@ -13,7 +13,6 @@
         "php": "^8.3|^8.4",
         "curio/sdclient": "^5.1",
         "guzzlehttp/guzzle": "^7.10",
-        "knplabs/github-api": "^3.16",
         "laravel/framework": "^13.1",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",

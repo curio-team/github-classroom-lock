@@ -28,9 +28,7 @@
                 @auth
                     @if (user()->isTeacher())
                         <x-nav-link href="{{ route('exams.index') }}" :active="request()->routeIs('exams.*')">Examens</x-nav-link>
-                        <x-nav-link href="{{ route('audit-log') }}" :active="request()->routeIs('audit-log')">Auditlog</x-nav-link>
-                        <x-nav-link href="{{ route('dashboard.teacher') }}" :active="request()->routeIs('dashboard.teacher')" class="opacity-60">Oude Classroom-teams</x-nav-link>
-                    @endif
+                        <x-nav-link href="{{ route('audit-log') }}" :active="request()->routeIs('audit-log')">Auditlog</x-nav-link>                    @endif
                 @endauth
             </div>
 

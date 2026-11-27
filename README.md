@@ -99,7 +99,6 @@ group's repository. The exam page warns you if it isn't. Staff are owners, so th
 * A student removed from the list keeps their GitHub access. Close the exam (step 5) for them first if needed.
 * If GitHub won't let the app accept the invitation automatically, the student gets a button to accept it on
   github.com (one extra click).
-* **Oude Classroom-teams** is the previous lock tool, for teams created by GitHub Classroom. New exams don't need it.
 
 ## Development
 
